@@ -1,0 +1,3563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محاكي دارة الري</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: linear-gradient(135deg, #0a1929 0%, #1a3a52 50%, #0d2438 100%);
+    color: #fff;
+    min-height: 100vh;
+    padding: 15px;
+  }
+  
+  .container { max-width: 1500px; margin: 0 auto; }
+  
+  h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, #4ade80, #22d3ee, #4ade80);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .subtitle {
+    text-align: center;
+    color: #94a3b8;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+  }
+  
+  .author-card {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  .author-badge {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(34, 211, 238, 0.15));
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    border-radius: 12px;
+    padding: 12px 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(74, 222, 128, 0.2);
+    transition: all 0.3s;
+  }
+  
+  .author-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3);
+    border-color: #4ade80;
+  }
+  
+  .author-icon {
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, #4ade80, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.5));
+  }
+  
+  .author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .author-label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+  
+  .author-name {
+    font-size: 1.15rem;
+    font-weight: bold;
+    background: linear-gradient(90deg, #4ade80, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .author-school {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+  }
+  
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .tab {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    color: #94a3b8;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  
+  .tab:hover { background: rgba(74, 222, 128, 0.1); color: #fff; }
+  .tab.active {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: #052e16;
+    font-weight: bold;
+    border-color: #4ade80;
+  }
+  
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 15px;
+  }
+  
+  @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+  
+  .panel {
+    background: rgba(15, 35, 55, 0.6);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Scene Styles */
+  .scene {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(180deg, #1e3a5f 0%, #2d5a87 50%, #87ceeb 100%);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid rgba(74, 222, 128, 0.3);
+  }
+  
+  .scene.night {
+    background: linear-gradient(180deg, #0a0a2e 0%, #1a1a4a 50%, #2c2c5e 100%);
+  }
+  
+  .sun {
+    position: absolute;
+    top: 30px;
+    left: 60px;
+    width: 70px;
+    height: 70px;
+    background: radial-gradient(circle, #fde047, #f59e0b);
+    border-radius: 50%;
+    box-shadow: 0 0 60px #fde047;
+    transition: all 0.5s;
+  }
+  
+  .moon {
+    position: absolute;
+    top: 30px;
+    left: 60px;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle at 35% 35%, #f5f5dc, #e0e0c0);
+    border-radius: 50%;
+    box-shadow: 0 0 40px rgba(245, 245, 220, 0.5);
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  
+  .moon.visible { opacity: 1; }
+  
+  .stars {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+  }
+  
+  .stars.visible { opacity: 1; }
+  
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle 2s infinite;
+  }
+  
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+  
+  .clouds {
+    position: absolute;
+    top: 40px;
+    right: 60px;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  .clouds.visible { opacity: 1; }
+  
+  .cloud {
+    width: 80px; height: 30px;
+    background: #475569;
+    border-radius: 50px;
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .cloud::before, .cloud::after {
+    content: ''; position: absolute;
+    background: #475569; border-radius: 50%;
+  }
+  .cloud::before { width: 30px; height: 30px; top: -15px; left: 15px; }
+  .cloud::after { width: 25px; height: 25px; top: -12px; right: 20px; }
+  
+  .rain {
+    position: absolute;
+    top: 70px; right: 50px;
+    width: 100px; height: 200px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .rain.active { opacity: 1; }
+  
+  .raindrop {
+    position: absolute;
+    width: 2px; height: 12px;
+    background: linear-gradient(to bottom, transparent, #60a5fa);
+    border-radius: 1px;
+    animation: fall 0.7s linear infinite;
+  }
+  @keyframes fall {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(300px); opacity: 0; }
+  }
+  
+  .ground {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 35%;
+    background: linear-gradient(180deg, #92400e 0%, #78350f 60%, #451a03 100%);
+    transition: all 0.5s;
+  }
+  .ground.wet {
+    background: linear-gradient(180deg, #78350f 0%, #451a03 60%, #1c0701 100%);
+  }
+  
+  .grass {
+    position: absolute;
+    bottom: 35%; left: 0; right: 0;
+    height: 8px;
+    background: repeating-linear-gradient(90deg, #16a34a 0px, #16a34a 3px, #15803d 3px, #15803d 6px);
+  }
+  
+  .plants {
+    position: absolute;
+    bottom: 35%; left: 0; right: 0;
+    height: 80px;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    padding: 0 50px;
+  }
+  
+  .plant {
+    width: 40px; height: 70px;
+    position: relative;
+    transition: filter 0.5s;
+  }
+  .plant.dry { filter: brightness(0.5) sepia(0.5); }
+  .plant.healthy { filter: brightness(1.1) saturate(1.3); }
+  
+  .stem {
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 4px; height: 50px;
+    background: #166534;
+    border-radius: 2px;
+  }
+  .leaf {
+    position: absolute;
+    width: 22px; height: 14px;
+    background: #16a34a;
+    border-radius: 50% 0;
+  }
+  .leaf.left { bottom: 25px; left: 5px; transform: rotate(-30deg); }
+  .leaf.right { bottom: 35px; right: 5px; transform: rotate(150deg); }
+  .leaf.top { bottom: 50px; left: 50%; transform: translateX(-50%) rotate(60deg); background: #22c55e; }
+  
+  .pump-station {
+    position: absolute;
+    bottom: 38%; left: 30px;
+    width: 90px; height: 140px;
+    z-index: 3;
+  }
+  
+  .water-tank {
+    width: 80px; height: 90px;
+    background: linear-gradient(180deg, #94a3b8 0%, #64748b 50%, #475569 100%);
+    border-radius: 6px 6px 3px 3px;
+    border: 2px solid #1e293b;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.3);
+    margin: 0 auto;
+  }
+  
+  .water-tank::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 2px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 2px;
+    z-index: 2;
+  }
+  
+  .water-level {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 50%, #1d4ed8 100%);
+    transition: height 0.5s;
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3);
+  }
+  
+  .water-level::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(255,255,255,0.4);
+  }
+  
+  /* Connecting pipe between tank and pump */
+  .pump-pipe-down {
+    position: absolute;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 12px;
+    background: linear-gradient(90deg, #475569, #94a3b8, #475569);
+    border: 1px solid #1e293b;
+    border-radius: 2px;
+    z-index: 1;
+  }
+  
+  /* Realistic pump - compact */
+  .pump {
+    position: absolute;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 65px;
+    height: 40px;
+  }
+  
+  /* Pump motor body (cylindrical) */
+  .pump-motor {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 26px;
+    background: linear-gradient(180deg, #4b5563 0%, #1f2937 50%, #111827 100%);
+    border-radius: 50% / 35%;
+    border: 1.5px solid #0f172a;
+    box-shadow: 
+      inset 0 2px 3px rgba(255,255,255,0.15),
+      inset 0 -2px 3px rgba(0,0,0,0.5),
+      0 3px 6px rgba(0,0,0,0.4);
+    z-index: 2;
+  }
+  
+  /* Cooling fins */
+  .pump-motor::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    height: 12px;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.4) 2px,
+      rgba(0,0,0,0.4) 3px
+    );
+    border-radius: 2px;
+  }
+  
+  /* Brand label */
+  .pump-motor::after {
+    content: 'PUMP';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 5px;
+    color: #fbbf24;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Pump base */
+  .pump-base {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 16px;
+    background: linear-gradient(180deg, #6b7280 0%, #374151 50%, #1f2937 100%);
+    border: 1.5px solid #0f172a;
+    border-radius: 3px;
+    box-shadow: 
+      inset 0 1px 2px rgba(255,255,255,0.15),
+      0 2px 4px rgba(0,0,0,0.4);
+  }
+  
+  /* Mounting bolts */
+  .pump-base::before,
+  .pump-base::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    width: 3px;
+    height: 3px;
+    background: radial-gradient(circle, #94a3b8, #1f2937);
+    border-radius: 50%;
+  }
+  
+  .pump-base::before { left: 4px; }
+  .pump-base::after { right: 4px; }
+  
+  /* Inlet pipe (left) */
+  .pump-inlet {
+    position: absolute;
+    top: 8px;
+    left: -6px;
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(180deg, #6b7280, #374151);
+    border: 1px solid #0f172a;
+    border-radius: 2px;
+    z-index: 1;
+  }
+  
+  /* Outlet pipe (right) - connects to main pipe */
+  .pump-outlet {
+    position: absolute;
+    top: 6px;
+    right: -15px;
+    width: 20px;
+    height: 7px;
+    background: linear-gradient(180deg, #6b7280, #374151);
+    border: 1px solid #0f172a;
+    border-radius: 2px;
+    z-index: 1;
+  }
+  
+  /* Vertical pipe from pump going up to main horizontal pipe */
+  .pump-pipe-up {
+    position: absolute;
+    top: 100px;
+    right: -8px;
+    width: 7px;
+    height: 50px;
+    background: linear-gradient(90deg, #374151, #6b7280, #374151);
+    border: 1px solid #1e293b;
+    border-radius: 2px;
+    z-index: 1;
+  }
+  
+  /* Joint/elbow connector */
+  .pipe-elbow {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(135deg, #6b7280, #374151);
+    border: 1px solid #1e293b;
+    border-radius: 3px;
+    z-index: 2;
+  }
+  
+  /* Vertical pipes from main pipe down to sprinklers */
+  .sprinkler-pipe {
+    position: absolute;
+    bottom: calc(38% + 1px);
+    width: 6px;
+    height: 38px;
+    background: linear-gradient(90deg, #374151, #6b7280, #374151);
+    border: 1px solid #1e293b;
+    border-radius: 2px;
+    z-index: 4;
+  }
+  
+  /* LED indicator */
+  .pump-indicator {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #7f1d1d;
+    box-shadow: 0 0 3px #ef4444;
+    transition: all 0.3s;
+    z-index: 3;
+  }
+  
+  .pump-indicator.active {
+    background: #22c55e;
+    box-shadow: 
+      0 0 8px #22c55e,
+      0 0 14px rgba(34, 197, 94, 0.6);
+    animation: pumpLed 0.6s infinite;
+  }
+  
+  @keyframes pumpLed {
+    0%, 100% { 
+      box-shadow: 0 0 8px #22c55e, 0 0 14px rgba(34, 197, 94, 0.5);
+    }
+    50% { 
+      box-shadow: 0 0 12px #22c55e, 0 0 20px rgba(34, 197, 94, 0.8);
+    }
+  }
+  
+  /* Rotating fan */
+  .pump-fan {
+    position: absolute;
+    top: 11px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #1f2937 30%, #4b5563 70%);
+    border: 1px solid #0f172a;
+    z-index: 3;
+    opacity: 0.8;
+  }
+  
+  .pump-fan::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: 
+      conic-gradient(
+        from 0deg,
+        transparent 0deg, transparent 30deg,
+        #94a3b8 30deg, #94a3b8 60deg,
+        transparent 60deg, transparent 120deg,
+        #94a3b8 120deg, #94a3b8 150deg,
+        transparent 150deg, transparent 210deg,
+        #94a3b8 210deg, #94a3b8 240deg,
+        transparent 240deg, transparent 300deg,
+        #94a3b8 300deg, #94a3b8 330deg,
+        transparent 330deg
+      );
+    border-radius: 50%;
+  }
+  
+  .pump-fan.spinning::before {
+    animation: spin 0.3s linear infinite;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Vibration when pump active */
+  .pump.active {
+    animation: vibrate 0.1s infinite;
+  }
+  
+  @keyframes vibrate {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    25% { transform: translateX(-50%) translateY(-0.3px); }
+    75% { transform: translateX(-50%) translateY(0.3px); }
+  }
+  
+  .pipe-horizontal {
+    position: absolute;
+    bottom: calc(38% + 38px);
+    left: 90px; right: 50px;
+    height: 8px;
+    background: linear-gradient(180deg, #6b7280, #475569, #1f2937);
+    border: 1px solid #0f172a;
+    border-radius: 3px;
+    z-index: 3;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  /* Pipe end caps for realism */
+  .pipe-horizontal::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -2px;
+    width: 6px;
+    height: 12px;
+    background: linear-gradient(180deg, #6b7280, #1f2937);
+    border: 1px solid #0f172a;
+    border-radius: 2px;
+  }
+  
+  .pipe-horizontal::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: -2px;
+    width: 6px;
+    height: 12px;
+    background: linear-gradient(180deg, #6b7280, #1f2937);
+    border: 1px solid #0f172a;
+    border-radius: 2px;
+  }
+  
+  .sprinkler {
+    position: absolute;
+    bottom: calc(38% + 38px);
+    width: 16px; height: 16px;
+    background: radial-gradient(circle, #94a3b8, #475569);
+    border-radius: 50%;
+    border: 2px solid #1e293b;
+    z-index: 5;
+  }
+  
+  .water-spray {
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100px; height: 60px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .water-spray.active { opacity: 1; }
+  
+  .spray-drop {
+    position: absolute;
+    width: 3px; height: 8px;
+    background: #60a5fa;
+    border-radius: 50%;
+    box-shadow: 0 0 4px #93c5fd;
+  }
+  
+  .moisture-sensor {
+    position: absolute;
+    bottom: 5%;
+    width: 12px; height: 50px;
+    background: linear-gradient(180deg, #facc15 0%, #facc15 30%, #71717a 30%, #52525b 100%);
+    border-radius: 2px;
+    z-index: 4;
+  }
+  
+  .sensor-label {
+    position: absolute;
+    top: -25px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    background: rgba(0,0,0,0.7);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  
+  .arduino-board {
+    position: absolute;
+    bottom: 20px; right: 20px;
+    width: 150px;
+    background: #14532d;
+    border-radius: 6px;
+    padding: 8px;
+    border: 2px solid #052e16;
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+  }
+  
+  .board-title {
+    font-size: 0.6rem;
+    color: #fff;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  
+  .board-led {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin: 2px;
+    background: #1f2937;
+    transition: all 0.3s;
+  }
+  
+  .board-led.on-power { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+  .board-led.on-pump { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+  .board-led.on-rain { background: #3b82f6; box-shadow: 0 0 6px #3b82f6; }
+  .board-led.on-alert { background: #ef4444; box-shadow: 0 0 6px #ef4444; animation: blink 0.5s infinite; }
+  
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+  }
+  
+  .lcd-display {
+    background: #052e16;
+    border: 1px solid #4ade80;
+    border-radius: 3px;
+    padding: 4px 6px;
+    margin: 4px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem;
+    color: #4ade80;
+    line-height: 1.3;
+    min-height: 30px;
+    direction: ltr;
+    text-align: left;
+  }
+  
+  .led-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-size: 0.55rem;
+  }
+  
+  .led-label { color: #fff; text-align: center; }
+  
+  /* Controls */
+  .control-section {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(74, 222, 128, 0.15);
+  }
+  .control-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+  
+  .section-title {
+    font-size: 0.95rem;
+    color: #4ade80;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .control-label { font-size: 0.85rem; color: #cbd5e1; }
+  
+  .slider-container { margin-bottom: 12px; }
+  
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+  }
+  
+  .slider-value {
+    color: #4ade80;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+  }
+  
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    background: #1e293b;
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    background: #4ade80;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px #4ade80;
+  }
+  
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    background: #4ade80;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 8px #4ade80;
+  }
+  
+  .toggle {
+    position: relative;
+    width: 50px; height: 26px;
+    background: #1e293b;
+    border-radius: 13px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .toggle.active { background: #4ade80; }
+  
+  .toggle-slider {
+    position: absolute;
+    top: 3px; right: 3px;
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s;
+  }
+  .toggle.active .toggle-slider { transform: translateX(-24px); }
+  
+  .btn {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: #052e16;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+    font-family: inherit;
+  }
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn.danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+  .btn.secondary { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; }
+  .btn.purple { background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; }
+  
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  
+  .status-card {
+    background: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(74, 222, 128, 0.15);
+  }
+  
+  .status-card-label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-bottom: 4px;
+  }
+  
+  .status-card-value {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #4ade80;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .status-card-value.warning { color: #fbbf24; }
+  .status-card-value.danger { color: #ef4444; }
+  .status-card-value.info { color: #60a5fa; }
+  
+  .log-container {
+    background: #020617;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 8px;
+    height: 140px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    direction: ltr;
+    text-align: left;
+  }
+  
+  .log-entry {
+    margin-bottom: 3px;
+    padding: 2px 4px;
+    border-radius: 2px;
+  }
+  .log-entry.info { color: #60a5fa; }
+  .log-entry.success { color: #4ade80; }
+  .log-entry.warning { color: #fbbf24; }
+  .log-entry.error { color: #ef4444; }
+  .log-time { color: #64748b; margin-right: 6px; }
+  
+  .mode-indicator {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-right: 8px;
+  }
+  .mode-auto { background: #4ade80; color: #052e16; }
+  .mode-manual { background: #fbbf24; color: #451a03; }
+  .mode-schedule { background: #a855f7; color: #2e1065; }
+  
+  .schematic-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 20;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid #4ade80;
+    color: #4ade80;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+  }
+  
+  .info-box {
+    background: rgba(59, 130, 246, 0.1);
+    border-right: 3px solid #3b82f6;
+    padding: 10px 12px;
+    border-radius: 4px;
+    margin-top: 12px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  
+  .info-box strong { color: #60a5fa; }
+  
+  /* === Serial Monitor === */
+  .serial-monitor {
+    background: #000;
+    border: 2px solid #1e293b;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .serial-header {
+    background: #1e293b;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #334155;
+  }
+  
+  .serial-title {
+    color: #4ade80;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    font-weight: bold;
+  }
+  
+  .serial-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  
+  .serial-btn {
+    background: #334155;
+    color: #cbd5e1;
+    border: 1px solid #475569;
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+  }
+  
+  .serial-btn:hover { background: #475569; color: #fff; }
+  
+  .serial-output {
+    background: #000;
+    color: #4ade80;
+    padding: 12px;
+    height: 400px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    direction: ltr;
+    text-align: left;
+  }
+  
+  .serial-line {
+    margin-bottom: 2px;
+    white-space: pre-wrap;
+  }
+  
+  .serial-line.info { color: #60a5fa; }
+  .serial-line.success { color: #4ade80; }
+  .serial-line.warning { color: #fbbf24; }
+  .serial-line.error { color: #ef4444; }
+  .serial-line.system { color: #a855f7; }
+  
+  .serial-input-bar {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    background: #1e293b;
+    border-top: 1px solid #334155;
+  }
+  
+  .serial-input {
+    flex: 1;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #4ade80;
+    padding: 6px 10px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    direction: ltr;
+  }
+  
+  .baud-select {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+  }
+  
+  /* === Mobile App === */
+  .phone-mockup {
+    max-width: 320px;
+    margin: 0 auto;
+    background: #1a1a2e;
+    border-radius: 30px;
+    padding: 15px;
+    border: 4px solid #0f0f1e;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  
+  .phone-screen {
+    background: linear-gradient(180deg, #16213e, #0f3460);
+    border-radius: 20px;
+    padding: 15px;
+    min-height: 600px;
+    color: #fff;
+  }
+  
+  .phone-status-bar {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    margin-bottom: 15px;
+    color: #cbd5e1;
+  }
+  
+  .phone-header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .phone-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    background: linear-gradient(90deg, #4ade80, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .phone-subtitle {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: 3px;
+  }
+  
+  .connection-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(74, 222, 128, 0.2);
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    margin: 10px auto;
+    width: fit-content;
+  }
+  
+  .conn-dot {
+    width: 8px;
+    height: 8px;
+    background: #4ade80;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  
+  .phone-card {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  
+  .phone-card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
+  
+  .phone-metric {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .phone-metric-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    text-align: center;
+  }
+  
+  .phone-metric-info { flex: 1; }
+  
+  .phone-metric-value {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #4ade80;
+  }
+  
+  .phone-metric-label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+  }
+  
+  .progress-bar-mini {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ade80, #22d3ee);
+    border-radius: 3px;
+    transition: width 0.5s;
+  }
+  
+  .phone-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 15px;
+  }
+  
+  .phone-btn {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: #052e16;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  
+  .phone-btn.danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+  
+  .notification {
+    background: rgba(251, 191, 36, 0.15);
+    border-right: 3px solid #fbbf24;
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+  }
+  
+  /* === Calculator === */
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  
+  @media (max-width: 800px) {
+    .calc-grid { grid-template-columns: 1fr; }
+  }
+  
+  .calc-input-group {
+    margin-bottom: 12px;
+  }
+  
+  .calc-input-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    margin-bottom: 4px;
+  }
+  
+  .calc-input {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+  
+  .calc-input:focus {
+    outline: none;
+    border-color: #4ade80;
+  }
+  
+  .calc-select {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  
+  .calc-result {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 211, 238, 0.1));
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+  }
+  
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(74, 222, 128, 0.1);
+  }
+  
+  .result-row:last-child { border-bottom: none; }
+  
+  .result-label { color: #cbd5e1; font-size: 0.9rem; }
+  .result-value {
+    color: #4ade80;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+  }
+  
+  /* === Schedule === */
+  .schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  
+  .schedule-item {
+    background: rgba(0,0,0,0.3);
+    padding: 10px 12px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(74, 222, 128, 0.15);
+  }
+  
+  .schedule-time {
+    font-family: 'Courier New', monospace;
+    color: #4ade80;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+  
+  .schedule-info {
+    flex: 1;
+    margin: 0 12px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+  }
+  
+  .schedule-delete {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+  }
+  
+  .schedule-delete:hover { background: rgba(239, 68, 68, 0.3); }
+  
+  .add-schedule {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: end;
+    margin-top: 12px;
+  }
+  
+  .time-display {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.5rem;
+    color: #4ade80;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  
+  /* === Stats === */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  
+  .stat-card {
+    background: linear-gradient(135deg, rgba(15, 35, 55, 0.8), rgba(30, 58, 95, 0.6));
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.2s;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(74, 222, 128, 0.2);
+  }
+  
+  .stat-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+  
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #4ade80;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 4px;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+    color: #94a3b8;
+  }
+  
+  .stat-trend {
+    font-size: 0.7rem;
+    color: #fbbf24;
+    margin-top: 4px;
+  }
+  
+  /* Code styling */
+  .code-container {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 15px;
+  }
+  
+  .code-header {
+    background: #161b22;
+    padding: 10px 15px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .code-title {
+    font-family: 'Courier New', monospace;
+    color: #58a6ff;
+    font-size: 0.9rem;
+  }
+  
+  pre {
+    padding: 15px;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #c9d1d9;
+    direction: ltr;
+    text-align: left;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  
+  .keyword { color: #ff7b72; }
+  .string { color: #a5d6ff; }
+  .comment { color: #8b949e; font-style: italic; }
+  .function { color: #d2a8ff; }
+  .number { color: #79c0d4; }
+  
+  /* Components */
+  .components-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 15px;
+  }
+  
+  .component-card {
+    background: rgba(15, 35, 55, 0.6);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.2s;
+  }
+  
+  .component-card:hover {
+    border-color: #4ade80;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(74, 222, 128, 0.15);
+  }
+  
+  .component-icon { font-size: 2rem; margin-bottom: 8px; }
+  .component-name {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #4ade80;
+    margin-bottom: 5px;
+  }
+  .component-desc {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .component-pin {
+    background: rgba(0,0,0,0.3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: #fbbf24;
+    display: inline-block;
+    margin-top: 5px;
+  }
+  
+  .schematic-container {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    overflow: auto;
+  }
+  
+  .chart-container {
+    background: rgba(15, 35, 55, 0.6);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    height: 350px;
+    margin-bottom: 15px;
+  }
+  
+  .chart-canvas { width: 100%; height: 100%; }
+  
+  .chart-legend {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+  }
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  
+  .copy-btn {
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+  }
+  .copy-btn:hover { background: #30363d; }
+  .copy-btn.copied { background: #1f6feb; color: #fff; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🌱 محاكي دارة الري الذكي</h1>
+  <p class="subtitle">Smart Irrigation | IoT + Scheduler + Calculator + Serial Monitor</p>
+  
+  <div class="author-card">
+    <div class="author-badge">
+      <span class="author-icon">👨‍💻</span>
+      <div class="author-info">
+        <div class="author-label">برمجة وتصميم ومحاكاة</div>
+        <div class="author-name">أحمد علاء فتياني</div>
+        <div class="author-school">الصف التاسع أ - مدرسة عين منجد الثانوية</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="tabs">
+    <button class="tab active" data-tab="simulator">🎮 المحاكاة</button>
+    <button class="tab" data-tab="serial">🖥️ Serial Monitor</button>
+    <button class="tab" data-tab="iot">📱 تطبيق IoT</button>
+    <button class="tab" data-tab="schedule">⏰ الجدولة</button>
+    <button class="tab" data-tab="calculator">🧮 حاسبة المياه</button>
+    <button class="tab" data-tab="stats">📈 الإحصائيات</button>
+    <button class="tab" data-tab="chart">📊 الرسم البياني</button>
+    <button class="tab" data-tab="schematic">📐 المخطط</button>
+    <button class="tab" data-tab="code">💻 كود Arduino</button>
+    <button class="tab" data-tab="esp">🌐 كود ESP32</button>
+  </div>
+  
+  <!-- TAB: SIMULATOR -->
+  <div class="tab-content active" id="tab-simulator">
+    <div class="layout">
+      <div class="panel">
+        <div class="scene" id="scene">
+          <button class="schematic-toggle" onclick="toggleNight()">🌙 وضع ليلي</button>
+          
+          <div class="stars" id="stars"></div>
+          <div class="sun" id="sun"></div>
+          <div class="moon" id="moon"></div>
+          <div class="clouds" id="clouds">
+            <div class="cloud"></div>
+            <div class="cloud"></div>
+          </div>
+          <div class="rain" id="rain"></div>
+          
+          <div class="ground" id="ground"></div>
+          <div class="grass"></div>
+          
+          <div class="plants" id="plants">
+            <div class="plant"><div class="stem"></div><div class="leaf left"></div><div class="leaf right"></div><div class="leaf top"></div></div>
+            <div class="plant"><div class="stem"></div><div class="leaf left"></div><div class="leaf right"></div><div class="leaf top"></div></div>
+            <div class="plant"><div class="stem"></div><div class="leaf left"></div><div class="leaf right"></div><div class="leaf top"></div></div>
+            <div class="plant"><div class="stem"></div><div class="leaf left"></div><div class="leaf right"></div><div class="leaf top"></div></div>
+            <div class="plant"><div class="stem"></div><div class="leaf left"></div><div class="leaf right"></div><div class="leaf top"></div></div>
+          </div>
+          
+          <div class="pump-station">
+            <div class="water-tank">
+              <div class="water-level" id="waterLevel" style="height: 80%;"></div>
+            </div>
+            <div class="pump-pipe-down"></div>
+            <div class="pump" id="pump">
+              <div class="pump-base"></div>
+              <div class="pump-motor"></div>
+              <div class="pump-inlet"></div>
+              <div class="pump-outlet"></div>
+              <div class="pump-fan" id="pumpFan"></div>
+              <div class="pump-indicator" id="pumpIndicator"></div>
+            </div>
+            <div class="pump-pipe-up"></div>
+          </div>
+          
+          <div class="pipe-horizontal"></div>
+          
+          <!-- Vertical pipes connecting main pipe to sprinklers -->
+          <div class="sprinkler-pipe" style="left: calc(25% - 3px);"></div>
+          <div class="sprinkler-pipe" style="left: calc(50% - 3px);"></div>
+          <div class="sprinkler-pipe" style="left: calc(75% - 3px);"></div>
+          
+          <div class="sprinkler" style="left: 25%;"><div class="water-spray" id="spray1"></div></div>
+          <div class="sprinkler" style="left: 50%;"><div class="water-spray" id="spray2"></div></div>
+          <div class="sprinkler" style="left: 75%;"><div class="water-spray" id="spray3"></div></div>
+          
+          <div class="moisture-sensor" style="left: 40%;">
+            <div class="sensor-label">حساس الرطوبة</div>
+          </div>
+          
+          <div class="arduino-board">
+            <div class="board-title">ARDUINO UNO R3</div>
+            <div class="lcd-display" id="lcd">
+              <div id="lcdLine1">Soil: 65%  Auto</div>
+              <div id="lcdLine2">Pump: OFF Rain:N</div>
+            </div>
+            <div class="led-row">
+              <div><div class="board-led on-power"></div><div class="led-label">PWR</div></div>
+              <div><div class="board-led" id="ledPump"></div><div class="led-label">PUMP</div></div>
+              <div><div class="board-led" id="ledRain"></div><div class="led-label">RAIN</div></div>
+              <div><div class="board-led" id="ledAlert"></div><div class="led-label">ALERT</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="control-section">
+          <div class="section-title">⚙️ نمط التشغيل</div>
+          <div class="control-row">
+            <span class="control-label">
+              <span class="mode-indicator mode-auto" id="modeLabel">AUTO</span>
+              تلقائي / يدوي
+            </span>
+            <div class="toggle active" id="modeToggle" onclick="toggleMode()">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="control-section">
+          <div class="section-title">🌡️ المتغيرات</div>
+          <div class="slider-container">
+            <div class="slider-header">
+              <span>رطوبة التربة</span>
+              <span class="slider-value" id="moistureVal">65%</span>
+            </div>
+            <input type="range" id="moistureSlider" min="0" max="100" value="65">
+          </div>
+          <div class="slider-container">
+            <div class="slider-header">
+              <span>درجة الحرارة</span>
+              <span class="slider-value" id="tempVal">28°C</span>
+            </div>
+            <input type="range" id="tempSlider" min="0" max="50" value="28">
+          </div>
+          <div class="control-row">
+            <span class="control-label">🌧️ هطول الأمطار</span>
+            <div class="toggle" id="rainToggle" onclick="toggleRain()">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="control-section">
+          <div class="section-title">🎯 إعدادات</div>
+          <div class="slider-container">
+            <div class="slider-header">
+              <span>عتبة التشغيل</span>
+              <span class="slider-value" id="thresholdVal">40%</span>
+            </div>
+            <input type="range" id="thresholdSlider" min="10" max="80" value="40">
+          </div>
+          <div class="slider-container">
+            <div class="slider-header">
+              <span>عتبة الإيقاف</span>
+              <span class="slider-value" id="stopVal">75%</span>
+            </div>
+            <input type="range" id="stopSlider" min="50" max="95" value="75">
+          </div>
+          <div class="slider-container">
+            <div class="slider-header">
+              <span>سرعة المحاكاة</span>
+              <span class="slider-value" id="speedVal">1x</span>
+            </div>
+            <input type="range" id="speedSlider" min="1" max="10" value="1">
+          </div>
+        </div>
+        
+        <div class="control-section">
+          <div class="section-title">🎮 تحكم</div>
+          <div class="btn-row">
+            <button class="btn" id="manualPumpBtn" onclick="manualPump()" disabled>تشغيل المضخة</button>
+            <button class="btn secondary" onclick="refillTank()">ملء الخزان</button>
+          </div>
+          <button class="btn purple" onclick="exportData()">📥 تصدير البيانات (CSV)</button>
+          <button class="btn danger" onclick="resetSystem()">🔄 إعادة تعيين كاملة</button>
+        </div>
+        
+        <div class="control-section">
+          <div class="section-title">📊 الحالة</div>
+          <div class="status-grid">
+            <div class="status-card">
+              <div class="status-card-label">المضخة</div>
+              <div class="status-card-value" id="pumpStatus">متوقفة</div>
+            </div>
+            <div class="status-card">
+              <div class="status-card-label">الخزان</div>
+              <div class="status-card-value info" id="tankStatus">80%</div>
+            </div>
+            <div class="status-card">
+              <div class="status-card-label">وقت التشغيل</div>
+              <div class="status-card-value" id="runtime">00:00</div>
+            </div>
+            <div class="status-card">
+              <div class="status-card-label">الدورات</div>
+              <div class="status-card-value" id="cycles">0</div>
+            </div>
+            <div class="status-card">
+              <div class="status-card-label">المياه</div>
+              <div class="status-card-value warning" id="waterUsed">0 L</div>
+            </div>
+            <div class="status-card">
+              <div class="status-card-label">صحة النباتات</div>
+              <div class="status-card-value" id="plantHealth">جيدة</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="control-section">
+          <div class="section-title">📝 السجل</div>
+          <div class="log-container" id="log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- TAB: SERIAL MONITOR -->
+  <div class="tab-content" id="tab-serial">
+    <div class="serial-monitor">
+      <div class="serial-header">
+        <div class="serial-title">📡 Arduino Serial Monitor</div>
+        <div class="serial-controls">
+          <select class="baud-select" id="baudRate">
+            <option value="9600">9600 baud</option>
+            <option value="115200">115200 baud</option>
+            <option value="57600">57600 baud</option>
+          </select>
+          <button class="serial-btn" onclick="clearSerial()">🗑️ مسح</button>
+          <button class="serial-btn" onclick="toggleAutoScroll()">📜 Auto-scroll</button>
+          <button class="serial-btn" onclick="downloadSerial()">💾 حفظ</button>
+        </div>
+      </div>
+      <div class="serial-output" id="serialOutput"></div>
+      <div class="serial-input-bar">
+        <input type="text" class="serial-input" id="serialInput" placeholder="أدخل أمر... (مثال: PUMP_ON, STATUS, RESET)">
+        <button class="serial-btn" onclick="sendSerial()" style="background: #4ade80; color: #000;">إرسال ↵</button>
+      </div>
+    </div>
+    <div class="info-box">
+      <strong>الأوامر المتاحة:</strong> 
+      <code style="background:#1e293b;padding:2px 6px;border-radius:3px;margin:0 4px;">PUMP_ON</code>
+      <code style="background:#1e293b;padding:2px 6px;border-radius:3px;margin:0 4px;">PUMP_OFF</code>
+      <code style="background:#1e293b;padding:2px 6px;border-radius:3px;margin:0 4px;">STATUS</code>
+      <code style="background:#1e293b;padding:2px 6px;border-radius:3px;margin:0 4px;">RESET</code>
+      <code style="background:#1e293b;padding:2px 6px;border-radius:3px;margin:0 4px;">SET_THRESHOLD 50</code>
+      <code style="background:#1e293b;padding:2px 6px;border-radius:3px;margin:0 4px;">CALIBRATE</code>
+    </div>
+  </div>
+  
+  <!-- TAB: IoT MOBILE APP -->
+  <div class="tab-content" id="tab-iot">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <div>
+        <div class="section-title" style="font-size: 1.1rem;">📱 محاكاة تطبيق الموبايل</div>
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="phone-status-bar">
+              <span>🔋 89%</span>
+              <span id="phoneTime">12:30</span>
+              <span>📶 5G</span>
+            </div>
+            <div class="phone-header">
+              <div class="phone-title">🌱 SmartFarm</div>
+              <div class="phone-subtitle">My Garden Controller</div>
+              <div class="connection-status">
+                <div class="conn-dot"></div>
+                <span>متصل بـ ESP32</span>
+              </div>
+            </div>
+            
+            <div class="phone-card">
+              <div class="phone-card-header">
+                <span>🌱 رطوبة التربة</span>
+                <span id="phoneTime2">آخر تحديث: الآن</span>
+              </div>
+              <div class="phone-metric">
+                <div class="phone-metric-icon">💧</div>
+                <div class="phone-metric-info">
+                  <div class="phone-metric-value" id="phoneMoisture">65%</div>
+                  <div class="phone-metric-label">القراءة الحالية</div>
+                  <div class="progress-bar-mini">
+                    <div class="progress-fill" id="phoneMoistureBar" style="width: 65%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="phone-card">
+              <div class="phone-card-header">
+                <span>💧 خزان المياه</span>
+              </div>
+              <div class="phone-metric">
+                <div class="phone-metric-icon">🛢️</div>
+                <div class="phone-metric-info">
+                  <div class="phone-metric-value" id="phoneTank">80%</div>
+                  <div class="phone-metric-label">المستوى الحالي</div>
+                  <div class="progress-bar-mini">
+                    <div class="progress-fill" id="phoneTankBar" style="width: 80%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="phone-card">
+              <div class="phone-card-header">
+                <span>🌡️ البيئة</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center;">
+                <div>
+                  <div style="font-size: 1.5rem">🌡️</div>
+                  <div class="phone-metric-value" id="phoneTemp">28°</div>
+                  <div class="phone-metric-label">حرارة</div>
+                </div>
+                <div>
+                  <div style="font-size: 1.5rem" id="phoneRainIcon">☀️</div>
+                  <div class="phone-metric-value" id="phoneRain">صحو</div>
+                  <div class="phone-metric-label">الطقس</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="phone-card">
+              <div class="phone-card-header">
+                <span>⚡ المضخة</span>
+                <span id="phonePumpStatus" style="color: #ef4444">⏹ متوقفة</span>
+              </div>
+              <div class="phone-actions">
+                <button class="phone-btn" onclick="phoneStartPump()">▶️ تشغيل</button>
+                <button class="phone-btn danger" onclick="phoneStopPump()">⏹ إيقاف</button>
+              </div>
+            </div>
+            
+            <div class="phone-card" id="phoneNotifications">
+              <div class="phone-card-header">
+                <span>🔔 الإشعارات</span>
+              </div>
+              <div class="notification">
+                💧 تم ضبط الرطوبة بنجاح
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <div class="section-title" style="font-size: 1.1rem;">🌐 معلومات الاتصال</div>
+        <div class="panel">
+          <div class="control-section">
+            <div class="section-title">📡 شبكة WiFi</div>
+            <div class="status-grid">
+              <div class="status-card">
+                <div class="status-card-label">SSID</div>
+                <div class="status-card-value" style="font-size: 0.85rem">HomeNetwork</div>
+              </div>
+              <div class="status-card">
+                <div class="status-card-label">RSSI</div>
+                <div class="status-card-value info">-45 dBm</div>
+              </div>
+              <div class="status-card">
+                <div class="status-card-label">IP Address</div>
+                <div class="status-card-value" style="font-size: 0.8rem">192.168.1.105</div>
+              </div>
+              <div class="status-card">
+                <div class="status-card-label">MQTT Broker</div>
+                <div class="status-card-value" style="font-size: 0.7rem">connected ✓</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="control-section">
+            <div class="section-title">☁️ MQTT Topics</div>
+            <div style="font-family: 'Courier New', monospace; font-size: 0.8rem; line-height: 1.8; direction: ltr; text-align: left;">
+              <div>📤 <span style="color: #4ade80">smart_farm/sensors/moisture</span></div>
+              <div>📤 <span style="color: #4ade80">smart_farm/sensors/temp</span></div>
+              <div>📤 <span style="color: #4ade80">smart_farm/sensors/rain</span></div>
+              <div>📤 <span style="color: #4ade80">smart_farm/tank/level</span></div>
+              <div>📥 <span style="color: #fbbf24">smart_farm/control/pump</span></div>
+              <div>📥 <span style="color: #fbbf24">smart_farm/control/threshold</span></div>
+              <div>📥 <span style="color: #fbbf24">smart_farm/control/mode</span></div>
+            </div>
+          </div>
+          
+          <div class="control-section">
+            <div class="section-title">📊 إحصائيات الاتصال</div>
+            <div class="status-grid">
+              <div class="status-card">
+                <div class="status-card-label">رسائل مرسلة</div>
+                <div class="status-card-value" id="iotSent">0</div>
+              </div>
+              <div class="status-card">
+                <div class="status-card-label">رسائل مستقبلة</div>
+                <div class="status-card-value" id="iotReceived">0</div>
+              </div>
+              <div class="status-card">
+                <div class="status-card-label">Uptime</div>
+                <div class="status-card-value" id="iotUptime">00:00</div>
+              </div>
+              <div class="status-card">
+                <div class="status-card-label">آخر اتصال</div>
+                <div class="status-card-value info">الآن</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- TAB: SCHEDULER -->
+  <div class="tab-content" id="tab-schedule">
+    <div class="panel">
+      <div class="time-display" id="scheduleTime">12:30:45</div>
+      <div class="section-title" style="font-size: 1.1rem;">⏰ جدولة الري التلقائي</div>
+      <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 15px;">
+        قم بإنشاء جدول زمني للري. سيتم تشغيل المضخة تلقائياً في الأوقات المحددة.
+      </p>
+      
+      <div class="add-schedule">
+        <div>
+          <label style="font-size: 0.8rem; color: #94a3b8;">الوقت</label>
+          <input type="time" class="calc-input" id="scheduleTimeInput" value="06:00">
+        </div>
+        <div>
+          <label style="font-size: 0.8rem; color: #94a3b8;">المدة (دقائق)</label>
+          <input type="number" class="calc-input" id="scheduleDuration" value="5" min="1" max="60">
+        </div>
+        <button class="btn" onclick="addSchedule()" style="margin: 0;">➕ إضافة</button>
+      </div>
+      
+      <div class="schedule-list" id="scheduleList">
+        <!-- Schedules will be added here -->
+      </div>
+      
+      <div class="info-box">
+        <strong>ملاحظة:</strong> الجدولة تعمل بناءً على ساعة النظام (RTC في المشروع الحقيقي). تأكد من ضبط الوقت بشكل صحيح. المواعيد المثالية للري في الفجر (5-7 ص) أو الغروب (5-7 م) لتقليل التبخر.
+      </div>
+    </div>
+  </div>
+  
+  <!-- TAB: WATER CALCULATOR -->
+  <div class="tab-content" id="tab-calculator">
+    <div class="panel">
+      <div class="section-title" style="font-size: 1.1rem;">🧮 حاسبة استهلاك المياه والتكلفة</div>
+      
+      <div class="calc-grid">
+        <div>
+          <div class="section-title" style="font-size: 0.95rem; color: #60a5fa;">📐 المعطيات</div>
+          
+          <div class="calc-input-group">
+            <label>نوع النباتات</label>
+            <select class="calc-select" id="plantType" onchange="calculateWater()">
+              <option value="2">🥬 خضروات (2 لتر/نبات/يوم)</option>
+              <option value="3">🍅 طماطم (3 لتر/نبات/يوم)</option>
+              <option value="1">🌿 أعشاب (1 لتر/نبات/يوم)</option>
+              <option value="5">🌳 أشجار صغيرة (5 لتر/نبات/يوم)</option>
+              <option value="10">🌳 أشجار كبيرة (10 لتر/نبات/يوم)</option>
+              <option value="0.5">🌸 نباتات زينة (0.5 لتر/نبات/يوم)</option>
+            </select>
+          </div>
+          
+          <div class="calc-input-group">
+            <label>عدد النباتات</label>
+            <input type="number" class="calc-input" id="plantCount" value="20" min="1" oninput="calculateWater()">
+          </div>
+          
+          <div class="calc-input-group">
+            <label>تدفق المضخة (لتر/دقيقة)</label>
+            <input type="number" class="calc-input" id="pumpFlow" value="3" min="0.5" step="0.5" oninput="calculateWater()">
+          </div>
+          
+          <div class="calc-input-group">
+            <label>قدرة المضخة (واط)</label>
+            <input type="number" class="calc-input" id="pumpPower" value="20" min="5" oninput="calculateWater()">
+          </div>
+          
+          <div class="calc-input-group">
+            <label>سعر الماء (شيكل/متر³)</label>
+            <input type="number" class="calc-input" id="waterPrice" value="6" step="0.1" oninput="calculateWater()">
+          </div>
+          
+          <div class="calc-input-group">
+            <label>سعر الكهرباء (شيكل/كيلوواط·ساعة)</label>
+            <input type="number" class="calc-input" id="elecPrice" value="0.5" step="0.05" oninput="calculateWater()">
+          </div>
+        </div>
+        
+        <div>
+          <div class="section-title" style="font-size: 0.95rem; color: #4ade80;">📊 النتائج</div>
+          
+          <div class="calc-result">
+            <div class="result-row">
+              <span class="result-label">💧 استهلاك يومي</span>
+              <span class="result-value" id="dailyWater">40 لتر</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">📅 استهلاك شهري</span>
+              <span class="result-value" id="monthlyWater">1200 لتر</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">📆 استهلاك سنوي</span>
+              <span class="result-value" id="yearlyWater">14.6 م³</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">⏱️ مدة التشغيل اليومي</span>
+              <span class="result-value" id="dailyTime">13.3 دقيقة</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">⚡ استهلاك الكهرباء/يوم</span>
+              <span class="result-value" id="dailyElec">0.004 كيلوواط·ساعة</span>
+            </div>
+          </div>
+          
+          <div class="calc-result" style="margin-top: 15px;">
+            <div class="section-title" style="font-size: 0.9rem; color: #fbbf24; margin-bottom: 10px;">💰 التكلفة</div>
+            <div class="result-row">
+              <span class="result-label">تكلفة المياه/شهر</span>
+              <span class="result-value" id="monthlyWaterCost">7.2 ₪</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">تكلفة الكهرباء/شهر</span>
+              <span class="result-value" id="monthlyElecCost">0.06 ₪</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">إجمالي شهري</span>
+              <span class="result-value" id="totalMonthly">7.26 ₪</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">إجمالي سنوي</span>
+              <span class="result-value" id="totalYearly">87.12 ₪</span>
+            </div>
+          </div>
+          
+          <div class="calc-result" style="margin-top: 15px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(74, 222, 128, 0.1));">
+            <div class="section-title" style="font-size: 0.9rem; color: #a855f7; margin-bottom: 10px;">🌍 توفير مقابل الري التقليدي</div>
+            <div class="result-row">
+              <span class="result-label">توفير المياه (40%)</span>
+              <span class="result-value" id="waterSaved" style="color: #a855f7">480 لتر/شهر</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">توفير المال/سنة</span>
+              <span class="result-value" id="moneySaved" style="color: #a855f7">35 ₪</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- TAB: STATISTICS -->
+  <div class="tab-content" id="tab-stats">
+    <div class="panel">
+      <div class="section-title" style="font-size: 1.1rem;">📈 إحصائيات النظام</div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">💧</div>
+          <div class="stat-value" id="statWater">0 L</div>
+          <div class="stat-label">إجمالي المياه المستخدمة</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">🔄</div>
+          <div class="stat-value" id="statCycles">0</div>
+          <div class="stat-label">عدد دورات الري</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">⏱️</div>
+          <div class="stat-value" id="statRuntime">0 min</div>
+          <div class="stat-label">إجمالي وقت التشغيل</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">🌧️</div>
+          <div class="stat-value" id="statRain">0</div>
+          <div class="stat-label">مرات اكتشاف المطر</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-value" id="statAvgMoist">--</div>
+          <div class="stat-label">متوسط الرطوبة</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">🌡️</div>
+          <div class="stat-value" id="statAvgTemp">--</div>
+          <div class="stat-label">متوسط الحرارة</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-value" id="statEnergy">0 Wh</div>
+          <div class="stat-label">الطاقة المستهلكة</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-value" id="statCost">0 ₪</div>
+          <div class="stat-label">التكلفة التقديرية</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">🌿</div>
+          <div class="stat-value" id="statHealth">100%</div>
+          <div class="stat-label">صحة النباتات</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">⏰</div>
+          <div class="stat-value" id="statUptime">00:00:00</div>
+          <div class="stat-label">وقت تشغيل النظام</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-value" id="statEfficiency">100%</div>
+          <div class="stat-label">كفاءة النظام</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-value" id="statSuccess">0</div>
+          <div class="stat-label">عمليات ناجحة</div>
+        </div>
+      </div>
+      
+      <div class="info-box" style="margin-top: 20px;">
+        <strong>كفاءة النظام</strong> تُحسب بناءً على: نسبة المياه الفعلية المستخدمة مقارنة بالحاجة، صحة النباتات، وعدد المرات التي تم فيها تجنب الري عند هطول المطر.
+      </div>
+    </div>
+  </div>
+  
+  <!-- TAB: CHART -->
+  <div class="tab-content" id="tab-chart">
+    <div class="panel">
+      <div class="section-title" style="font-size: 1.1rem;">📊 الرسم البياني للقراءات الحية</div>
+      <div class="chart-container">
+        <canvas id="chartCanvas" class="chart-canvas"></canvas>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div><span>الرطوبة (%)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div><span>الحرارة (°C×2)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div><span>الخزان (%)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div><span>المضخة</span></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- TAB: SCHEMATIC -->
+  <div class="tab-content" id="tab-schematic">
+    <div class="panel">
+      <div class="section-title" style="font-size: 1.1rem;">📐 المخطط الكهربائي للدارة</div>
+      <div class="schematic-container">
+        <svg viewBox="0 0 900 620" style="width: 100%; height: auto;">
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" stroke-width="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="900" height="620" fill="url(#grid)"/>
+          
+          <rect x="350" y="220" width="200" height="160" fill="#14532d" stroke="#052e16" stroke-width="2" rx="6"/>
+          <text x="450" y="245" text-anchor="middle" fill="#fff" font-family="Arial" font-size="14" font-weight="bold">ARDUINO UNO</text>
+          <text x="450" y="262" text-anchor="middle" fill="#bbf7d0" font-family="Arial" font-size="10">ATmega328P</text>
+          
+          <g font-family="Courier New" font-size="9" fill="#fff">
+            <rect x="350" y="280" width="15" height="6" fill="#1f2937"/><text x="370" y="285">5V</text>
+            <rect x="350" y="295" width="15" height="6" fill="#1f2937"/><text x="370" y="300">GND</text>
+            <rect x="350" y="310" width="15" height="6" fill="#1f2937"/><text x="370" y="315">A0</text>
+            <rect x="350" y="325" width="15" height="6" fill="#1f2937"/><text x="370" y="330">D2</text>
+            <rect x="350" y="340" width="15" height="6" fill="#1f2937"/><text x="370" y="345">D7</text>
+            <rect x="350" y="355" width="15" height="6" fill="#1f2937"/><text x="370" y="360">D8</text>
+            <rect x="535" y="280" width="15" height="6" fill="#1f2937"/><text x="525" y="285" text-anchor="end">D3</text>
+            <rect x="535" y="295" width="15" height="6" fill="#1f2937"/><text x="525" y="300" text-anchor="end">D4</text>
+            <rect x="535" y="310" width="15" height="6" fill="#1f2937"/><text x="525" y="315" text-anchor="end">D5</text>
+            <rect x="535" y="325" width="15" height="6" fill="#1f2937"/><text x="525" y="330" text-anchor="end">D6</text>
+            <rect x="535" y="340" width="15" height="6" fill="#1f2937"/><text x="525" y="345" text-anchor="end">SDA</text>
+            <rect x="535" y="355" width="15" height="6" fill="#1f2937"/><text x="525" y="360" text-anchor="end">SCL</text>
+          </g>
+          
+          <rect x="80" y="280" width="120" height="80" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" rx="4"/>
+          <text x="140" y="305" text-anchor="middle" fill="#78350f" font-family="Arial" font-size="11" font-weight="bold">Soil Moisture</text>
+          <text x="140" y="320" text-anchor="middle" fill="#78350f" font-family="Arial" font-size="9">Sensor (YL-69)</text>
+          <line x1="100" y1="338" x2="100" y2="282" stroke="#dc2626" stroke-width="2"/>
+          <line x1="100" y1="282" x2="350" y2="282" stroke="#dc2626" stroke-width="2"/>
+          <line x1="140" y1="338" x2="140" y2="295" stroke="#1f2937" stroke-width="2"/>
+          <line x1="140" y1="295" x2="350" y2="297" stroke="#1f2937" stroke-width="2"/>
+          <line x1="180" y1="338" x2="180" y2="312" stroke="#3b82f6" stroke-width="2"/>
+          <line x1="180" y1="312" x2="350" y2="313" stroke="#3b82f6" stroke-width="2"/>
+          
+          <rect x="80" y="100" width="120" height="80" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" rx="4"/>
+          <text x="140" y="125" text-anchor="middle" fill="#1e3a8a" font-family="Arial" font-size="11" font-weight="bold">Rain Sensor</text>
+          <text x="140" y="140" text-anchor="middle" fill="#1e3a8a" font-family="Arial" font-size="9">Module</text>
+          <line x1="180" y1="163" x2="180" y2="200" stroke="#3b82f6" stroke-width="2"/>
+          <line x1="180" y1="200" x2="320" y2="200" stroke="#3b82f6" stroke-width="2"/>
+          <line x1="320" y1="200" x2="320" y2="328" stroke="#3b82f6" stroke-width="2"/>
+          <line x1="320" y1="328" x2="350" y2="328" stroke="#3b82f6" stroke-width="2"/>
+          
+          <rect x="80" y="450" width="120" height="80" fill="#fce7f3" stroke="#ec4899" stroke-width="2" rx="4"/>
+          <text x="140" y="475" text-anchor="middle" fill="#831843" font-family="Arial" font-size="11" font-weight="bold">DHT22</text>
+          <text x="140" y="490" text-anchor="middle" fill="#831843" font-family="Arial" font-size="9">Temp & Humidity</text>
+          <line x1="200" y1="490" x2="280" y2="490" stroke="#fbbf24" stroke-width="2"/>
+          <line x1="280" y1="490" x2="280" y2="343" stroke="#fbbf24" stroke-width="2"/>
+          <line x1="280" y1="343" x2="350" y2="343" stroke="#fbbf24" stroke-width="2"/>
+          
+          <rect x="650" y="100" width="140" height="100" fill="#1e293b" stroke="#475569" stroke-width="2" rx="4"/>
+          <text x="720" y="125" text-anchor="middle" fill="#fff" font-family="Arial" font-size="11" font-weight="bold">Relay Module</text>
+          <text x="720" y="140" text-anchor="middle" fill="#94a3b8" font-family="Arial" font-size="9">5V Single Channel</text>
+          <line x1="670" y1="170" x2="670" y2="240" stroke="#fbbf24" stroke-width="2"/>
+          <line x1="670" y1="240" x2="600" y2="240" stroke="#fbbf24" stroke-width="2"/>
+          <line x1="600" y1="240" x2="600" y2="282" stroke="#fbbf24" stroke-width="2"/>
+          <line x1="600" y1="282" x2="550" y2="282" stroke="#fbbf24" stroke-width="2"/>
+          
+          <rect x="650" y="280" width="140" height="100" fill="#475569" stroke="#1e293b" stroke-width="2" rx="4"/>
+          <text x="720" y="305" text-anchor="middle" fill="#fff" font-family="Arial" font-size="11" font-weight="bold">Water Pump</text>
+          <text x="720" y="320" text-anchor="middle" fill="#cbd5e1" font-family="Arial" font-size="9">DC 12V</text>
+          <line x1="720" y1="200" x2="720" y2="280" stroke="#dc2626" stroke-width="3"/>
+          
+          <rect x="650" y="420" width="140" height="80" fill="#1f2937" stroke="#4ade80" stroke-width="2" rx="4"/>
+          <text x="720" y="445" text-anchor="middle" fill="#4ade80" font-family="Arial" font-size="11" font-weight="bold">LCD 16x2 (I2C)</text>
+          <line x1="650" y1="460" x2="600" y2="460" stroke="#a855f7" stroke-width="2"/>
+          <line x1="600" y1="460" x2="600" y2="345" stroke="#a855f7" stroke-width="2"/>
+          <line x1="600" y1="345" x2="550" y2="345" stroke="#a855f7" stroke-width="2"/>
+          
+          <rect x="350" y="480" width="200" height="60" fill="#fbbf24" stroke="#92400e" stroke-width="2" rx="4"/>
+          <text x="450" y="500" text-anchor="middle" fill="#451a03" font-family="Arial" font-size="11" font-weight="bold">Power Supply</text>
+          <text x="450" y="515" text-anchor="middle" fill="#451a03" font-family="Arial" font-size="9">9-12V DC / 2A Adapter</text>
+          <text x="450" y="530" text-anchor="middle" fill="#451a03" font-family="Arial" font-size="8">+12V        GND</text>
+          
+          <!-- Power Supply terminals -->
+          <circle cx="400" cy="540" r="4" fill="#dc2626" stroke="#451a03" stroke-width="1.5"/>
+          <text x="400" y="555" text-anchor="middle" fill="#451a03" font-family="Arial" font-size="8" font-weight="bold">+</text>
+          <circle cx="500" cy="540" r="4" fill="#1f2937" stroke="#451a03" stroke-width="1.5"/>
+          <text x="500" y="555" text-anchor="middle" fill="#451a03" font-family="Arial" font-size="8" font-weight="bold">-</text>
+          
+          <!-- POWER LINE: PSU (+) → Arduino VIN (5V regulator handles step-down) -->
+          <line x1="400" y1="540" x2="400" y2="570" stroke="#dc2626" stroke-width="2.5"/>
+          <line x1="400" y1="570" x2="280" y2="570" stroke="#dc2626" stroke-width="2.5"/>
+          <line x1="280" y1="570" x2="280" y2="282" stroke="#dc2626" stroke-width="2.5"/>
+          <line x1="280" y1="282" x2="350" y2="282" stroke="#dc2626" stroke-width="2.5"/>
+          <text x="285" y="425" fill="#dc2626" font-family="Arial" font-size="9" font-weight="bold" transform="rotate(-90 285 425)">+12V to Arduino VIN</text>
+          
+          <!-- POWER LINE: PSU (+) → Relay COM (for pump) -->
+          <line x1="400" y1="540" x2="850" y2="540" stroke="#dc2626" stroke-width="2.5"/>
+          <line x1="850" y1="540" x2="850" y2="160" stroke="#dc2626" stroke-width="2.5"/>
+          <line x1="850" y1="160" x2="790" y2="160" stroke="#dc2626" stroke-width="2.5"/>
+          <text x="860" y="350" fill="#dc2626" font-family="Arial" font-size="9" font-weight="bold" transform="rotate(-90 860 350)">+12V to Pump (via Relay)</text>
+          
+          <!-- GROUND LINE: PSU (-) → Arduino GND -->
+          <line x1="500" y1="540" x2="500" y2="585" stroke="#1f2937" stroke-width="2.5"/>
+          <line x1="500" y1="585" x2="260" y2="585" stroke="#1f2937" stroke-width="2.5"/>
+          <line x1="260" y1="585" x2="260" y2="297" stroke="#1f2937" stroke-width="2.5"/>
+          <line x1="260" y1="297" x2="350" y2="297" stroke="#1f2937" stroke-width="2.5"/>
+          
+          <!-- GROUND LINE: PSU (-) → Pump (-) -->
+          <line x1="500" y1="540" x2="500" y2="395" stroke="#1f2937" stroke-width="2.5"/>
+          <line x1="500" y1="395" x2="720" y2="395" stroke="#1f2937" stroke-width="2.5"/>
+          <line x1="720" y1="395" x2="720" y2="380" stroke="#1f2937" stroke-width="2.5"/>
+          
+          <text x="450" y="40" text-anchor="middle" fill="#1e293b" font-family="Arial" font-size="20" font-weight="bold">Smart Irrigation Schematic</text>
+        </svg>
+      </div>
+      
+      <div class="info-box" style="margin-top: 15px;">
+        <strong>⚡ توصيلات مزود الطاقة (Power Supply 12V/2A):</strong><br>
+        <strong style="color:#ef4444">الموجب (+12V) ←</strong> يتفرع إلى مكانين:
+        <br>① منفذ <code style="background:#1e293b;padding:1px 5px;border-radius:3px;color:#fbbf24">VIN</code> في الأردوينو (الأردوينو فيه منظم جهد داخلي يحوّل الـ 12V إلى 5V)
+        <br>② طرف <code style="background:#1e293b;padding:1px 5px;border-radius:3px;color:#fbbf24">COM</code> في الترحيل (Relay) لتغذية المضخة
+        <br><br>
+        <strong style="color:#1f2937;background:#fff;padding:1px 4px;border-radius:2px">السالب (GND) ←</strong> يتفرع إلى مكانين:
+        <br>① منفذ <code style="background:#1e293b;padding:1px 5px;border-radius:3px;color:#fbbf24">GND</code> في الأردوينو
+        <br>② الطرف السالب في المضخة
+        <br><br>
+        <strong>⚠️ مهم جداً:</strong> يجب أن يكون GND مشترك بين كل المكونات (Common Ground) وإلا الإشارات ما تشتغل صح!
+      </div>
+    </div>
+  </div>
+  
+  <!-- TAB: ARDUINO CODE -->
+  <div class="tab-content" id="tab-code">
+    <div class="code-container">
+      <div class="code-header">
+        <div class="code-title">📄 SmartIrrigation_Pro.ino</div>
+        <button class="copy-btn" onclick="copyCode('codeBlock')">📋 نسخ</button>
+      </div>
+      <pre id="codeBlock"><span class="comment">/*
+ * Smart Irrigation System - Pro Version
+ * مع جدولة، تحكم Serial، حماية متقدمة
+ */</span>
+
+<span class="keyword">#include</span> <span class="string">&lt;Wire.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;LiquidCrystal_I2C.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;DHT.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;RTClib.h&gt;</span>
+
+<span class="keyword">#define</span> SOIL_PIN     A0
+<span class="keyword">#define</span> RAIN_PIN     <span class="number">2</span>
+<span class="keyword">#define</span> DHT_PIN      <span class="number">7</span>
+<span class="keyword">#define</span> RELAY_PIN    <span class="number">3</span>
+<span class="keyword">#define</span> LED_PUMP     <span class="number">5</span>
+<span class="keyword">#define</span> LED_RAIN     <span class="number">6</span>
+<span class="keyword">#define</span> LED_ALERT    <span class="number">8</span>
+<span class="keyword">#define</span> BUZZER_PIN   <span class="number">9</span>
+
+<span class="keyword">int</span> moistureLow  = <span class="number">40</span>;
+<span class="keyword">int</span> moistureHigh = <span class="number">75</span>;
+<span class="keyword">int</span> wateringCycles = <span class="number">0</span>;
+<span class="keyword">float</span> totalWaterUsed = <span class="number">0</span>;
+
+LiquidCrystal_I2C lcd(<span class="number">0x27</span>, <span class="number">16</span>, <span class="number">2</span>);
+DHT dht(DHT_PIN, DHT22);
+RTC_DS3231 rtc;
+
+<span class="comment">// جداول الري (Schedule)</span>
+<span class="keyword">struct</span> Schedule {
+  <span class="keyword">int</span> hour;
+  <span class="keyword">int</span> minute;
+  <span class="keyword">int</span> duration;  <span class="comment">// بالدقائق</span>
+  <span class="keyword">bool</span> enabled;
+};
+
+Schedule schedules[<span class="number">5</span>] = {
+  {<span class="number">6</span>, <span class="number">0</span>, <span class="number">5</span>, <span class="keyword">true</span>},   <span class="comment">// 6:00 صباحاً - 5 دقائق</span>
+  {<span class="number">18</span>, <span class="number">30</span>, <span class="number">5</span>, <span class="keyword">true</span>},  <span class="comment">// 6:30 مساءً - 5 دقائق</span>
+  {<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="keyword">false</span>},
+  {<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="keyword">false</span>},
+  {<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="keyword">false</span>}
+};
+
+<span class="keyword">bool</span> pumpRunning = <span class="keyword">false</span>;
+<span class="keyword">unsigned</span> <span class="keyword">long</span> pumpStartTime = <span class="number">0</span>;
+
+<span class="keyword">void</span> <span class="function">setup</span>() {
+  Serial.<span class="function">begin</span>(<span class="number">9600</span>);
+  
+  <span class="function">pinMode</span>(RAIN_PIN, INPUT);
+  <span class="function">pinMode</span>(RELAY_PIN, OUTPUT);
+  <span class="function">pinMode</span>(LED_PUMP, OUTPUT);
+  <span class="function">pinMode</span>(LED_RAIN, OUTPUT);
+  <span class="function">pinMode</span>(LED_ALERT, OUTPUT);
+  <span class="function">pinMode</span>(BUZZER_PIN, OUTPUT);
+  
+  <span class="function">digitalWrite</span>(RELAY_PIN, HIGH);
+  
+  dht.<span class="function">begin</span>();
+  lcd.<span class="function">init</span>();
+  lcd.<span class="function">backlight</span>();
+  rtc.<span class="function">begin</span>();
+  
+  Serial.<span class="function">println</span>(<span class="string">"=== Smart Irrigation Pro Started ==="</span>);
+  <span class="function">printHelp</span>();
+}
+
+<span class="keyword">void</span> <span class="function">loop</span>() {
+  <span class="function">readSensors</span>();
+  <span class="function">checkSchedule</span>();
+  <span class="function">controlIrrigation</span>();
+  <span class="function">handleSerialCommands</span>();
+  <span class="function">updateDisplay</span>();
+  <span class="function">delay</span>(<span class="number">1000</span>);
+}
+
+<span class="keyword">void</span> <span class="function">checkSchedule</span>() {
+  DateTime now = rtc.<span class="function">now</span>();
+  
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) {
+    <span class="keyword">if</span> (schedules[i].enabled &amp;&amp; 
+        schedules[i].hour == now.<span class="function">hour</span>() &amp;&amp; 
+        schedules[i].minute == now.<span class="function">minute</span>() &amp;&amp;
+        now.<span class="function">second</span>() &lt; <span class="number">2</span>) {
+      
+      Serial.<span class="function">print</span>(<span class="string">"[SCHEDULE] Triggered at "</span>);
+      Serial.<span class="function">print</span>(now.<span class="function">hour</span>());
+      Serial.<span class="function">print</span>(<span class="string">":"</span>);
+      Serial.<span class="function">println</span>(now.<span class="function">minute</span>());
+      
+      <span class="function">runScheduledWatering</span>(schedules[i].duration);
+    }
+  }
+}
+
+<span class="keyword">void</span> <span class="function">runScheduledWatering</span>(<span class="keyword">int</span> minutes) {
+  <span class="function">startPump</span>();
+  <span class="function">delay</span>(minutes * <span class="number">60</span> * <span class="number">1000UL</span>);
+  <span class="function">stopPump</span>(<span class="string">"Schedule completed"</span>);
+}
+
+<span class="keyword">void</span> <span class="function">handleSerialCommands</span>() {
+  <span class="keyword">if</span> (!Serial.<span class="function">available</span>()) <span class="keyword">return</span>;
+  
+  String cmd = Serial.<span class="function">readStringUntil</span>(<span class="string">'\n'</span>);
+  cmd.<span class="function">trim</span>();
+  cmd.<span class="function">toUpperCase</span>();
+  
+  <span class="keyword">if</span> (cmd == <span class="string">"PUMP_ON"</span>) <span class="function">startPump</span>();
+  <span class="keyword">else</span> <span class="keyword">if</span> (cmd == <span class="string">"PUMP_OFF"</span>) <span class="function">stopPump</span>(<span class="string">"Manual"</span>);
+  <span class="keyword">else</span> <span class="keyword">if</span> (cmd == <span class="string">"STATUS"</span>) <span class="function">printStatus</span>();
+  <span class="keyword">else</span> <span class="keyword">if</span> (cmd == <span class="string">"RESET"</span>) <span class="function">resetSystem</span>();
+  <span class="keyword">else</span> <span class="keyword">if</span> (cmd.<span class="function">startsWith</span>(<span class="string">"SET_THRESHOLD"</span>)) {
+    moistureLow = cmd.<span class="function">substring</span>(<span class="number">14</span>).<span class="function">toInt</span>();
+    Serial.<span class="function">print</span>(<span class="string">"Threshold set to: "</span>);
+    Serial.<span class="function">println</span>(moistureLow);
+  }
+  <span class="keyword">else</span> <span class="keyword">if</span> (cmd == <span class="string">"HELP"</span>) <span class="function">printHelp</span>();
+  <span class="keyword">else</span> Serial.<span class="function">println</span>(<span class="string">"Unknown command. Type HELP."</span>);
+}
+
+<span class="keyword">void</span> <span class="function">printStatus</span>() {
+  Serial.<span class="function">println</span>(<span class="string">"--- System Status ---"</span>);
+  Serial.<span class="function">print</span>(<span class="string">"Moisture: "</span>); Serial.<span class="function">println</span>(<span class="function">readMoisture</span>());
+  Serial.<span class="function">print</span>(<span class="string">"Pump: "</span>); Serial.<span class="function">println</span>(pumpRunning ? <span class="string">"ON"</span> : <span class="string">"OFF"</span>);
+  Serial.<span class="function">print</span>(<span class="string">"Cycles: "</span>); Serial.<span class="function">println</span>(wateringCycles);
+  Serial.<span class="function">print</span>(<span class="string">"Water used: "</span>); Serial.<span class="function">println</span>(totalWaterUsed);
+}
+
+<span class="keyword">void</span> <span class="function">printHelp</span>() {
+  Serial.<span class="function">println</span>(<span class="string">"Commands:"</span>);
+  Serial.<span class="function">println</span>(<span class="string">"  PUMP_ON, PUMP_OFF"</span>);
+  Serial.<span class="function">println</span>(<span class="string">"  STATUS, RESET, HELP"</span>);
+  Serial.<span class="function">println</span>(<span class="string">"  SET_THRESHOLD &lt;value&gt;"</span>);
+}</pre>
+    </div>
+  </div>
+  
+  <!-- TAB: ESP32 CODE -->
+  <div class="tab-content" id="tab-esp">
+    <div class="code-container">
+      <div class="code-header">
+        <div class="code-title">📄 SmartIrrigation_ESP32_IoT.ino</div>
+        <button class="copy-btn" onclick="copyCode('espCode')">📋 نسخ</button>
+      </div>
+      <pre id="espCode"><span class="comment">/*
+ * Smart Irrigation - ESP32 IoT Version
+ * مع WiFi, MQTT, ThingSpeak, Telegram
+ */</span>
+
+<span class="keyword">#include</span> <span class="string">&lt;WiFi.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;PubSubClient.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;HTTPClient.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;ArduinoJson.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;DHT.h&gt;</span>
+
+<span class="comment">// إعدادات WiFi</span>
+<span class="keyword">const</span> <span class="keyword">char</span>* WIFI_SSID = <span class="string">"YourWiFiName"</span>;
+<span class="keyword">const</span> <span class="keyword">char</span>* WIFI_PASS = <span class="string">"YourPassword"</span>;
+
+<span class="comment">// MQTT Broker (HiveMQ)</span>
+<span class="keyword">const</span> <span class="keyword">char</span>* MQTT_SERVER = <span class="string">"broker.hivemq.com"</span>;
+<span class="keyword">const</span> <span class="keyword">int</span>   MQTT_PORT = <span class="number">1883</span>;
+<span class="keyword">const</span> <span class="keyword">char</span>* MQTT_CLIENT = <span class="string">"smart_farm_001"</span>;
+
+<span class="comment">// Telegram Bot</span>
+<span class="keyword">const</span> String BOT_TOKEN = <span class="string">"YOUR_BOT_TOKEN"</span>;
+<span class="keyword">const</span> String CHAT_ID = <span class="string">"YOUR_CHAT_ID"</span>;
+
+<span class="comment">// ThingSpeak</span>
+<span class="keyword">const</span> String TS_API_KEY = <span class="string">"YOUR_API_KEY"</span>;
+
+<span class="comment">// Pin definitions</span>
+<span class="keyword">#define</span> SOIL_PIN    <span class="number">34</span>
+<span class="keyword">#define</span> RAIN_PIN    <span class="number">35</span>
+<span class="keyword">#define</span> DHT_PIN     <span class="number">4</span>
+<span class="keyword">#define</span> RELAY_PIN   <span class="number">5</span>
+
+WiFiClient espClient;
+PubSubClient mqtt(espClient);
+DHT dht(DHT_PIN, DHT22);
+
+<span class="keyword">unsigned</span> <span class="keyword">long</span> lastUpload = <span class="number">0</span>;
+<span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> UPLOAD_INTERVAL = <span class="number">60000</span>; <span class="comment">// كل دقيقة</span>
+
+<span class="keyword">void</span> <span class="function">setup</span>() {
+  Serial.<span class="function">begin</span>(<span class="number">115200</span>);
+  
+  <span class="function">pinMode</span>(RELAY_PIN, OUTPUT);
+  <span class="function">digitalWrite</span>(RELAY_PIN, HIGH);
+  
+  dht.<span class="function">begin</span>();
+  
+  <span class="function">setupWiFi</span>();
+  <span class="function">setupMQTT</span>();
+  <span class="function">sendTelegram</span>(<span class="string">"🌱 نظام الري بدأ التشغيل!"</span>);
+}
+
+<span class="keyword">void</span> <span class="function">loop</span>() {
+  <span class="keyword">if</span> (!mqtt.<span class="function">connected</span>()) <span class="function">reconnectMQTT</span>();
+  mqtt.<span class="function">loop</span>();
+  
+  <span class="comment">// رفع البيانات كل دقيقة</span>
+  <span class="keyword">if</span> (<span class="function">millis</span>() - lastUpload &gt; UPLOAD_INTERVAL) {
+    <span class="function">readAndUpload</span>();
+    lastUpload = <span class="function">millis</span>();
+  }
+  
+  <span class="function">delay</span>(<span class="number">100</span>);
+}
+
+<span class="keyword">void</span> <span class="function">setupWiFi</span>() {
+  WiFi.<span class="function">begin</span>(WIFI_SSID, WIFI_PASS);
+  Serial.<span class="function">print</span>(<span class="string">"Connecting to WiFi"</span>);
+  
+  <span class="keyword">while</span> (WiFi.<span class="function">status</span>() != WL_CONNECTED) {
+    <span class="function">delay</span>(<span class="number">500</span>);
+    Serial.<span class="function">print</span>(<span class="string">"."</span>);
+  }
+  
+  Serial.<span class="function">println</span>();
+  Serial.<span class="function">print</span>(<span class="string">"Connected! IP: "</span>);
+  Serial.<span class="function">println</span>(WiFi.<span class="function">localIP</span>());
+}
+
+<span class="keyword">void</span> <span class="function">setupMQTT</span>() {
+  mqtt.<span class="function">setServer</span>(MQTT_SERVER, MQTT_PORT);
+  mqtt.<span class="function">setCallback</span>(mqttCallback);
+  <span class="function">reconnectMQTT</span>();
+}
+
+<span class="keyword">void</span> <span class="function">reconnectMQTT</span>() {
+  <span class="keyword">while</span> (!mqtt.<span class="function">connected</span>()) {
+    <span class="keyword">if</span> (mqtt.<span class="function">connect</span>(MQTT_CLIENT)) {
+      Serial.<span class="function">println</span>(<span class="string">"MQTT Connected"</span>);
+      mqtt.<span class="function">subscribe</span>(<span class="string">"smart_farm/control/pump"</span>);
+      mqtt.<span class="function">subscribe</span>(<span class="string">"smart_farm/control/threshold"</span>);
+    } <span class="keyword">else</span> {
+      <span class="function">delay</span>(<span class="number">5000</span>);
+    }
+  }
+}
+
+<span class="keyword">void</span> <span class="function">mqttCallback</span>(<span class="keyword">char</span>* topic, <span class="keyword">byte</span>* payload, <span class="keyword">unsigned</span> <span class="keyword">int</span> length) {
+  String message;
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; length; i++) {
+    message += (<span class="keyword">char</span>)payload[i];
+  }
+  
+  String topicStr = String(topic);
+  
+  <span class="keyword">if</span> (topicStr == <span class="string">"smart_farm/control/pump"</span>) {
+    <span class="keyword">if</span> (message == <span class="string">"ON"</span>) {
+      <span class="function">digitalWrite</span>(RELAY_PIN, LOW);
+      <span class="function">sendTelegram</span>(<span class="string">"💧 المضخة شغّالة (تحكم عن بعد)"</span>);
+    } <span class="keyword">else</span> {
+      <span class="function">digitalWrite</span>(RELAY_PIN, HIGH);
+      <span class="function">sendTelegram</span>(<span class="string">"⏹ المضخة متوقفة"</span>);
+    }
+  }
+}
+
+<span class="keyword">void</span> <span class="function">readAndUpload</span>() {
+  <span class="keyword">int</span> moisture = <span class="function">map</span>(<span class="function">analogRead</span>(SOIL_PIN), <span class="number">4095</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">100</span>);
+  <span class="keyword">float</span> temp = dht.<span class="function">readTemperature</span>();
+  <span class="keyword">float</span> hum = dht.<span class="function">readHumidity</span>();
+  <span class="keyword">bool</span> rain = (<span class="function">digitalRead</span>(RAIN_PIN) == LOW);
+  
+  <span class="comment">// نشر إلى MQTT</span>
+  mqtt.<span class="function">publish</span>(<span class="string">"smart_farm/sensors/moisture"</span>, String(moisture).<span class="function">c_str</span>());
+  mqtt.<span class="function">publish</span>(<span class="string">"smart_farm/sensors/temp"</span>, String(temp).<span class="function">c_str</span>());
+  mqtt.<span class="function">publish</span>(<span class="string">"smart_farm/sensors/rain"</span>, rain ? <span class="string">"YES"</span> : <span class="string">"NO"</span>);
+  
+  <span class="comment">// رفع لـ ThingSpeak</span>
+  <span class="function">uploadToThingSpeak</span>(moisture, temp, hum, rain);
+  
+  <span class="comment">// تنبيه إذا الرطوبة منخفضة جداً</span>
+  <span class="keyword">if</span> (moisture &lt; <span class="number">20</span>) {
+    <span class="function">sendTelegram</span>(<span class="string">"⚠️ تحذير! رطوبة منخفضة جداً: "</span> + String(moisture) + <span class="string">"%"</span>);
+  }
+}
+
+<span class="keyword">void</span> <span class="function">uploadToThingSpeak</span>(<span class="keyword">int</span> m, <span class="keyword">float</span> t, <span class="keyword">float</span> h, <span class="keyword">bool</span> r) {
+  HTTPClient http;
+  String url = <span class="string">"https://api.thingspeak.com/update?api_key="</span> + TS_API_KEY;
+  url += <span class="string">"&amp;field1="</span> + String(m);
+  url += <span class="string">"&amp;field2="</span> + String(t);
+  url += <span class="string">"&amp;field3="</span> + String(h);
+  url += <span class="string">"&amp;field4="</span> + String(r ? <span class="number">1</span> : <span class="number">0</span>);
+  
+  http.<span class="function">begin</span>(url);
+  <span class="keyword">int</span> code = http.<span class="function">GET</span>();
+  http.<span class="function">end</span>();
+}
+
+<span class="keyword">void</span> <span class="function">sendTelegram</span>(String message) {
+  HTTPClient http;
+  String url = <span class="string">"https://api.telegram.org/bot"</span> + BOT_TOKEN;
+  url += <span class="string">"/sendMessage?chat_id="</span> + CHAT_ID;
+  url += <span class="string">"&amp;text="</span> + message;
+  
+  http.<span class="function">begin</span>(url);
+  http.<span class="function">GET</span>();
+  http.<span class="function">end</span>();
+}</pre>
+    </div>
+  </div>
+  
+</div>
+
+<script>
+// ============ STATE ============
+let state = {
+  mode: 'auto',
+  moisture: 65,
+  temperature: 28,
+  raining: false,
+  threshold: 40,
+  stopThreshold: 75,
+  pumpOn: false,
+  tankLevel: 80,
+  cycles: 0,
+  manualOverride: false,
+  startTime: null,
+  speed: 1,
+  waterUsed: 0,
+  plantHealth: 100,
+  totalRuntime: 0,
+  rainDetections: 0,
+  successfulCycles: 0,
+  systemStartTime: Date.now(),
+  energyUsed: 0,
+  moistureSum: 0,
+  moistureCount: 0,
+  tempSum: 0,
+  tempCount: 0,
+  iotMessagesSent: 0,
+  iotMessagesReceived: 0,
+  isNight: false
+};
+
+let chartData = {
+  moisture: [], temperature: [], tank: [], pump: [], labels: [], history: []
+};
+
+let schedules = [];
+let autoScroll = true;
+
+// ============ TABS ============
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'chart') drawChart();
+    if (tab.dataset.tab === 'calculator') calculateWater();
+    if (tab.dataset.tab === 'stats') updateStats();
+  });
+});
+
+// ============ STARS ============
+function createStars() {
+  const stars = document.getElementById('stars');
+  stars.innerHTML = '';
+  for (let i = 0; i < 50; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 60 + '%';
+    star.style.animationDelay = Math.random() * 2 + 's';
+    stars.appendChild(star);
+  }
+}
+createStars();
+
+// ============ INIT VISUALS ============
+function createRain() {
+  const rain = document.getElementById('rain');
+  rain.innerHTML = '';
+  for (let i = 0; i < 30; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'raindrop';
+    drop.style.left = Math.random() * 100 + 'px';
+    drop.style.animationDelay = Math.random() * 0.7 + 's';
+    drop.style.animationDuration = (0.5 + Math.random() * 0.4) + 's';
+    rain.appendChild(drop);
+  }
+}
+
+function createSprays() {
+  ['spray1', 'spray2', 'spray3'].forEach(id => {
+    const spray = document.getElementById(id);
+    spray.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+      const drop = document.createElement('div');
+      drop.className = 'spray-drop';
+      const angle = (Math.random() - 0.5) * 60;
+      const distance = 20 + Math.random() * 30;
+      const x = Math.sin(angle * Math.PI / 180) * distance;
+      drop.style.left = '50%';
+      drop.style.bottom = '0';
+      const animName = `sprayDrop_${id}_${i}`;
+      drop.style.animation = `${animName} ${0.6 + Math.random() * 0.3}s linear infinite`;
+      drop.style.animationDelay = (Math.random() * 0.6) + 's';
+      try {
+        document.styleSheets[0].insertRule(`
+          @keyframes ${animName} {
+            0% { transform: translate(0, 0); opacity: 1; }
+            100% { transform: translate(${x}px, 50px); opacity: 0; }
+          }
+        `, document.styleSheets[0].cssRules.length);
+      } catch(e) {}
+      spray.appendChild(drop);
+    }
+  });
+}
+
+createRain();
+createSprays();
+
+// ============ LOGGING ============
+function log(message, type = 'info') {
+  const logEl = document.getElementById('log');
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.innerHTML = `<span class="log-time">[${time}]</span>${message}`;
+  logEl.insertBefore(entry, logEl.firstChild);
+  while (logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
+  
+  // Mirror to serial
+  serialLog(message, type);
+}
+
+function serialLog(message, type = 'info') {
+  const output = document.getElementById('serialOutput');
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+  const ms = String(new Date().getMilliseconds()).padStart(3, '0');
+  const line = document.createElement('div');
+  line.className = `serial-line ${type}`;
+  line.textContent = `[${time}.${ms}] ${message}`;
+  output.appendChild(line);
+  if (autoScroll) output.scrollTop = output.scrollHeight;
+  while (output.children.length > 200) output.removeChild(output.firstChild);
+}
+
+// ============ UPDATE UI ============
+function updateUI() {
+  document.getElementById('moistureVal').textContent = Math.round(state.moisture) + '%';
+  document.getElementById('tempVal').textContent = Math.round(state.temperature) + '°C';
+  document.getElementById('thresholdVal').textContent = state.threshold + '%';
+  document.getElementById('stopVal').textContent = state.stopThreshold + '%';
+  document.getElementById('speedVal').textContent = state.speed + 'x';
+  document.getElementById('tankStatus').textContent = Math.round(state.tankLevel) + '%';
+  document.getElementById('cycles').textContent = state.cycles;
+  document.getElementById('waterUsed').textContent = state.waterUsed.toFixed(1) + ' L';
+  
+  const healthEl = document.getElementById('plantHealth');
+  if (state.plantHealth > 70) {
+    healthEl.textContent = 'ممتازة 🌿';
+    healthEl.style.color = '#4ade80';
+  } else if (state.plantHealth > 40) {
+    healthEl.textContent = 'متوسطة';
+    healthEl.style.color = '#fbbf24';
+  } else {
+    healthEl.textContent = 'ضعيفة 🥀';
+    healthEl.style.color = '#ef4444';
+  }
+  
+  document.getElementById('waterLevel').style.height = state.tankLevel + '%';
+  
+  const tankEl = document.getElementById('tankStatus');
+  if (state.tankLevel < 20) tankEl.className = 'status-card-value danger';
+  else if (state.tankLevel < 40) tankEl.className = 'status-card-value warning';
+  else tankEl.className = 'status-card-value info';
+  
+  const pumpInd = document.getElementById('pumpIndicator');
+  const pumpFan = document.getElementById('pumpFan');
+  const pumpEl = document.getElementById('pump');
+  const ledPump = document.getElementById('ledPump');
+  const pumpStatus = document.getElementById('pumpStatus');
+  
+  if (state.pumpOn) {
+    pumpInd.classList.add('active');
+    pumpFan.classList.add('spinning');
+    pumpEl.classList.add('active');
+    ledPump.classList.add('on-pump');
+    pumpStatus.textContent = 'تعمل ✓';
+    pumpStatus.style.color = '#4ade80';
+    document.getElementById('spray1').classList.add('active');
+    document.getElementById('spray2').classList.add('active');
+    document.getElementById('spray3').classList.add('active');
+  } else {
+    pumpInd.classList.remove('active');
+    pumpFan.classList.remove('spinning');
+    pumpEl.classList.remove('active');
+    ledPump.classList.remove('on-pump');
+    pumpStatus.textContent = 'متوقفة';
+    pumpStatus.style.color = '#94a3b8';
+    document.getElementById('spray1').classList.remove('active');
+    document.getElementById('spray2').classList.remove('active');
+    document.getElementById('spray3').classList.remove('active');
+  }
+  
+  const ledRain = document.getElementById('ledRain');
+  if (state.raining) {
+    ledRain.classList.add('on-rain');
+    document.getElementById('rain').classList.add('active');
+    document.getElementById('clouds').classList.add('visible');
+    document.getElementById('sun').style.opacity = '0.3';
+  } else {
+    ledRain.classList.remove('on-rain');
+    document.getElementById('rain').classList.remove('active');
+    document.getElementById('clouds').classList.remove('visible');
+    if (!state.isNight) document.getElementById('sun').style.opacity = '1';
+  }
+  
+  const ledAlert = document.getElementById('ledAlert');
+  if (state.tankLevel < 20 || state.moisture < 15) {
+    ledAlert.classList.add('on-alert');
+  } else {
+    ledAlert.classList.remove('on-alert');
+  }
+  
+  const ground = document.getElementById('ground');
+  if (state.moisture > 50) ground.classList.add('wet');
+  else ground.classList.remove('wet');
+  
+  document.querySelectorAll('.plant').forEach(p => {
+    p.classList.remove('dry', 'healthy');
+    if (state.moisture < 30) p.classList.add('dry');
+    else if (state.moisture > 60) p.classList.add('healthy');
+  });
+  
+  const moistStr = Math.round(state.moisture).toString().padStart(2, '0');
+  const modeStr = state.mode === 'auto' ? 'Auto' : 'Man ';
+  const pumpStr = state.pumpOn ? 'ON ' : 'OFF';
+  const rainStr = state.raining ? 'Y' : 'N';
+  document.getElementById('lcdLine1').textContent = `Soil:${moistStr}% ${modeStr}`;
+  document.getElementById('lcdLine2').textContent = `Pump:${pumpStr} Rain:${rainStr}`;
+  
+  if (state.pumpOn && state.startTime) {
+    const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+    const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const secs = (elapsed % 60).toString().padStart(2, '0');
+    document.getElementById('runtime').textContent = `${mins}:${secs}`;
+  }
+  
+  // Update phone display
+  updatePhoneDisplay();
+}
+
+function updatePhoneDisplay() {
+  document.getElementById('phoneMoisture').textContent = Math.round(state.moisture) + '%';
+  document.getElementById('phoneMoistureBar').style.width = state.moisture + '%';
+  document.getElementById('phoneTank').textContent = Math.round(state.tankLevel) + '%';
+  document.getElementById('phoneTankBar').style.width = state.tankLevel + '%';
+  document.getElementById('phoneTemp').textContent = Math.round(state.temperature) + '°';
+  
+  const phoneRain = document.getElementById('phoneRain');
+  const phoneRainIcon = document.getElementById('phoneRainIcon');
+  if (state.raining) {
+    phoneRain.textContent = 'مطر';
+    phoneRainIcon.textContent = '🌧️';
+  } else {
+    phoneRain.textContent = 'صحو';
+    phoneRainIcon.textContent = state.isNight ? '🌙' : '☀️';
+  }
+  
+  const phonePump = document.getElementById('phonePumpStatus');
+  if (state.pumpOn) {
+    phonePump.textContent = '▶ تعمل';
+    phonePump.style.color = '#4ade80';
+  } else {
+    phonePump.textContent = '⏹ متوقفة';
+    phonePump.style.color = '#ef4444';
+  }
+  
+  const now = new Date();
+  document.getElementById('phoneTime').textContent = 
+    now.getHours().toString().padStart(2, '0') + ':' + 
+    now.getMinutes().toString().padStart(2, '0');
+}
+
+// ============ CONTROL LOOP ============
+function controlLoop() {
+  const factor = state.speed;
+  
+  const evapRate = (0.05 + (state.temperature - 20) * 0.008) * factor;
+  if (!state.pumpOn && !state.raining) {
+    state.moisture = Math.max(0, state.moisture - evapRate);
+  }
+  
+  if (state.raining) {
+    state.moisture = Math.min(100, state.moisture + 0.4 * factor);
+  }
+  
+  if (state.pumpOn) {
+    state.moisture = Math.min(100, state.moisture + 0.6 * factor);
+    state.tankLevel = Math.max(0, state.tankLevel - 0.15 * factor);
+    state.waterUsed += 0.005 * factor;
+    state.totalRuntime += 0.2 * factor;
+    state.energyUsed += 0.001 * factor; // Wh
+  }
+  
+  if (state.moisture < 20) {
+    state.plantHealth = Math.max(0, state.plantHealth - 0.05 * factor);
+  } else if (state.moisture > 80) {
+    state.plantHealth = Math.max(0, state.plantHealth - 0.02 * factor);
+  } else if (state.moisture >= 40 && state.moisture <= 70) {
+    state.plantHealth = Math.min(100, state.plantHealth + 0.03 * factor);
+  }
+  
+  // Stats accumulation
+  state.moistureSum += state.moisture;
+  state.moistureCount++;
+  state.tempSum += state.temperature;
+  state.tempCount++;
+  
+  // AUTO mode
+  if (state.mode === 'auto' && !state.manualOverride) {
+    if (state.raining && state.pumpOn) {
+      stopPump('🌧️ تم اكتشاف المطر - إيقاف المضخة');
+    }
+    if (state.tankLevel < 5 && state.pumpOn) {
+      stopPump('⚠️ الخزان فارغ - إيقاف المضخة');
+    }
+    if (!state.pumpOn && state.moisture < state.threshold && !state.raining && state.tankLevel > 5) {
+      startPump('💧 رطوبة منخفضة - تشغيل المضخة تلقائياً');
+    }
+    if (state.pumpOn && state.moisture >= state.stopThreshold) {
+      state.successfulCycles++;
+      stopPump('✅ تم الوصول للرطوبة المطلوبة');
+    }
+  }
+  
+  document.getElementById('moistureSlider').value = Math.round(state.moisture);
+  
+  updateUI();
+  recordChartData();
+  
+  // Simulate IoT messages
+  if (Math.random() < 0.1) {
+    state.iotMessagesSent++;
+  }
+  
+  // Update IoT stats
+  if (document.getElementById('tab-iot').classList.contains('active')) {
+    document.getElementById('iotSent').textContent = state.iotMessagesSent;
+    document.getElementById('iotReceived').textContent = state.iotMessagesReceived;
+    const upMs = Date.now() - state.systemStartTime;
+    const upSec = Math.floor(upMs / 1000);
+    const upMin = Math.floor(upSec / 60);
+    const upSecs = upSec % 60;
+    document.getElementById('iotUptime').textContent = 
+      `${String(upMin).padStart(2, '0')}:${String(upSecs).padStart(2, '0')}`;
+  }
+  
+  // Check schedule
+  checkScheduleNow();
+}
+
+function startPump(reason) {
+  if (state.pumpOn) return;
+  state.pumpOn = true;
+  state.startTime = Date.now();
+  state.cycles++;
+  log(reason || 'تشغيل المضخة', 'success');
+}
+
+function stopPump(reason) {
+  if (!state.pumpOn) return;
+  state.pumpOn = false;
+  state.startTime = null;
+  log(reason || 'إيقاف المضخة', 'info');
+}
+
+// ============ CHART ============
+function recordChartData() {
+  chartData.moisture.push(state.moisture);
+  chartData.temperature.push(state.temperature);
+  chartData.tank.push(state.tankLevel);
+  chartData.pump.push(state.pumpOn ? 100 : 0);
+  chartData.labels.push(Date.now());
+  
+  // Save full history for export
+  chartData.history.push({
+    timestamp: new Date().toISOString(),
+    moisture: state.moisture.toFixed(1),
+    temperature: state.temperature,
+    tankLevel: state.tankLevel.toFixed(1),
+    pumpOn: state.pumpOn,
+    raining: state.raining
+  });
+  
+  if (chartData.moisture.length > 60) {
+    chartData.moisture.shift();
+    chartData.temperature.shift();
+    chartData.tank.shift();
+    chartData.pump.shift();
+    chartData.labels.shift();
+  }
+  
+  if (chartData.history.length > 1000) {
+    chartData.history.shift();
+  }
+}
+
+function drawChart() {
+  const canvas = document.getElementById('chartCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  
+  const W = rect.width;
+  const H = rect.height;
+  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const chartW = W - padding.left - padding.right;
+  const chartH = H - padding.top - padding.bottom;
+  
+  ctx.clearRect(0, 0, W, H);
+  
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const y = padding.top + (chartH * i / 10);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(padding.left + chartW, y);
+    ctx.stroke();
+  }
+  
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 10; i++) {
+    const val = 100 - i * 10;
+    const y = padding.top + (chartH * i / 10);
+    ctx.fillText(val, padding.left - 5, y + 3);
+  }
+  
+  if (chartData.moisture.length < 2) return;
+  
+  function drawLine(data, color, fill = false) {
+    const len = data.length;
+    if (len < 2) return;
+    
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    for (let i = 0; i < len; i++) {
+      const x = padding.left + (chartW * i / (len - 1));
+      const y = padding.top + chartH - (chartH * data[i] / 100);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    
+    if (fill) {
+      ctx.lineTo(padding.left + chartW, padding.top + chartH);
+      ctx.lineTo(padding.left, padding.top + chartH);
+      ctx.closePath();
+      ctx.fillStyle = color + '22';
+      ctx.fill();
+    }
+  }
+  
+  drawLine(chartData.pump, '#ef4444', true);
+  drawLine(chartData.tank, '#3b82f6');
+  drawLine(chartData.temperature.map(t => t * 2), '#f59e0b');
+  drawLine(chartData.moisture, '#4ade80');
+}
+
+setInterval(() => {
+  if (document.getElementById('tab-chart').classList.contains('active')) {
+    drawChart();
+  }
+}, 1000);
+
+// ============ EVENT HANDLERS ============
+function toggleMode() {
+  const toggle = document.getElementById('modeToggle');
+  const label = document.getElementById('modeLabel');
+  const btn = document.getElementById('manualPumpBtn');
+  
+  if (state.mode === 'auto') {
+    state.mode = 'manual';
+    toggle.classList.remove('active');
+    label.textContent = 'MANUAL';
+    label.className = 'mode-indicator mode-manual';
+    btn.disabled = false;
+    log('🔧 تم التبديل للنمط اليدوي', 'warning');
+    if (state.pumpOn) stopPump('تبديل النمط');
+  } else {
+    state.mode = 'auto';
+    toggle.classList.add('active');
+    label.textContent = 'AUTO';
+    label.className = 'mode-indicator mode-auto';
+    btn.disabled = true;
+    state.manualOverride = false;
+    log('🤖 تم التبديل للنمط التلقائي', 'success');
+  }
+}
+
+function toggleRain() {
+  const toggle = document.getElementById('rainToggle');
+  state.raining = !state.raining;
+  if (state.raining) state.rainDetections++;
+  toggle.classList.toggle('active');
+  log(state.raining ? '🌧️ بدأ المطر' : '☀️ توقف المطر', 'info');
+}
+
+function toggleNight() {
+  state.isNight = !state.isNight;
+  const scene = document.getElementById('scene');
+  const sun = document.getElementById('sun');
+  const moon = document.getElementById('moon');
+  const stars = document.getElementById('stars');
+  const btn = document.querySelector('.schematic-toggle');
+  
+  if (state.isNight) {
+    scene.classList.add('night');
+    sun.style.opacity = '0';
+    moon.classList.add('visible');
+    stars.classList.add('visible');
+    btn.textContent = '☀️ وضع نهاري';
+    log('🌙 تم التبديل للوضع الليلي', 'info');
+  } else {
+    scene.classList.remove('night');
+    sun.style.opacity = '1';
+    moon.classList.remove('visible');
+    stars.classList.remove('visible');
+    btn.textContent = '🌙 وضع ليلي';
+    log('☀️ تم التبديل للوضع النهاري', 'info');
+  }
+}
+
+function manualPump() {
+  if (state.mode !== 'manual') return;
+  if (state.pumpOn) {
+    stopPump('🔧 إيقاف يدوي');
+  } else {
+    if (state.tankLevel < 5) {
+      log('❌ لا يمكن التشغيل - الخزان فارغ', 'error');
+      return;
+    }
+    startPump('🔧 تشغيل يدوي');
+  }
+}
+
+function refillTank() {
+  state.tankLevel = 100;
+  log('🚰 تم ملء الخزان', 'success');
+  updateUI();
+}
+
+function resetSystem() {
+  state.moisture = 65;
+  state.temperature = 28;
+  state.tankLevel = 100;
+  state.cycles = 0;
+  state.waterUsed = 0;
+  state.plantHealth = 100;
+  state.totalRuntime = 0;
+  state.rainDetections = 0;
+  state.successfulCycles = 0;
+  state.energyUsed = 0;
+  state.moistureSum = 0;
+  state.moistureCount = 0;
+  state.tempSum = 0;
+  state.tempCount = 0;
+  if (state.pumpOn) stopPump();
+  document.getElementById('moistureSlider').value = 65;
+  document.getElementById('tempSlider').value = 28;
+  document.getElementById('runtime').textContent = '00:00';
+  chartData = { moisture: [], temperature: [], tank: [], pump: [], labels: [], history: [] };
+  log('🔄 تم إعادة تعيين النظام بالكامل', 'warning');
+  updateUI();
+}
+
+function copyCode(elementId) {
+  const code = document.getElementById(elementId).innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = event.target;
+    btn.textContent = '✅ تم النسخ';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 نسخ';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// ============ SERIAL MONITOR ============
+function clearSerial() {
+  document.getElementById('serialOutput').innerHTML = '';
+  serialLog('Serial cleared', 'system');
+}
+
+function toggleAutoScroll() {
+  autoScroll = !autoScroll;
+  serialLog(`Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`, 'system');
+}
+
+function downloadSerial() {
+  const text = Array.from(document.querySelectorAll('.serial-line'))
+    .map(el => el.textContent).join('\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'serial_log_' + Date.now() + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function sendSerial() {
+  const input = document.getElementById('serialInput');
+  const cmd = input.value.trim().toUpperCase();
+  if (!cmd) return;
+  
+  serialLog('> ' + cmd, 'system');
+  
+  if (cmd === 'PUMP_ON') {
+    if (state.tankLevel < 5) {
+      serialLog('ERROR: Tank empty', 'error');
+    } else {
+      if (state.mode === 'auto') toggleMode();
+      startPump('Serial command');
+      serialLog('OK: Pump started', 'success');
+    }
+  } else if (cmd === 'PUMP_OFF') {
+    stopPump('Serial command');
+    serialLog('OK: Pump stopped', 'success');
+  } else if (cmd === 'STATUS') {
+    serialLog('--- System Status ---', 'info');
+    serialLog(`Moisture: ${Math.round(state.moisture)}%`, 'info');
+    serialLog(`Temperature: ${state.temperature}°C`, 'info');
+    serialLog(`Tank: ${Math.round(state.tankLevel)}%`, 'info');
+    serialLog(`Pump: ${state.pumpOn ? 'ON' : 'OFF'}`, 'info');
+    serialLog(`Mode: ${state.mode.toUpperCase()}`, 'info');
+    serialLog(`Cycles: ${state.cycles}`, 'info');
+    serialLog(`Water used: ${state.waterUsed.toFixed(2)} L`, 'info');
+  } else if (cmd === 'RESET') {
+    resetSystem();
+    serialLog('OK: System reset', 'success');
+  } else if (cmd.startsWith('SET_THRESHOLD ')) {
+    const val = parseInt(cmd.split(' ')[1]);
+    if (val >= 10 && val <= 80) {
+      state.threshold = val;
+      document.getElementById('thresholdSlider').value = val;
+      updateUI();
+      serialLog(`OK: Threshold set to ${val}%`, 'success');
+    } else {
+      serialLog('ERROR: Value must be 10-80', 'error');
+    }
+  } else if (cmd === 'CALIBRATE') {
+    serialLog('Calibrating sensors...', 'info');
+    setTimeout(() => serialLog('Sensor calibration complete', 'success'), 1500);
+  } else if (cmd === 'HELP') {
+    serialLog('Commands:', 'info');
+    serialLog('  PUMP_ON, PUMP_OFF', 'info');
+    serialLog('  STATUS, RESET', 'info');
+    serialLog('  SET_THRESHOLD <value>', 'info');
+    serialLog('  CALIBRATE, HELP', 'info');
+  } else {
+    serialLog('ERROR: Unknown command. Type HELP', 'error');
+  }
+  
+  input.value = '';
+}
+
+document.getElementById('serialInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') sendSerial();
+});
+
+// ============ MOBILE APP ============
+function phoneStartPump() {
+  state.iotMessagesReceived++;
+  if (state.tankLevel < 5) {
+    log('❌ التطبيق: لا يمكن التشغيل - الخزان فارغ', 'error');
+    return;
+  }
+  if (state.mode === 'auto') toggleMode();
+  startPump('📱 أمر من التطبيق');
+}
+
+function phoneStopPump() {
+  state.iotMessagesReceived++;
+  stopPump('📱 إيقاف من التطبيق');
+}
+
+// ============ SCHEDULES ============
+function addSchedule() {
+  const time = document.getElementById('scheduleTimeInput').value;
+  const duration = parseInt(document.getElementById('scheduleDuration').value);
+  
+  if (!time || !duration) return;
+  
+  schedules.push({
+    id: Date.now(),
+    time: time,
+    duration: duration,
+    enabled: true
+  });
+  
+  renderSchedules();
+  log(`⏰ تمت إضافة موعد ري الساعة ${time} لمدة ${duration} دقيقة`, 'success');
+}
+
+function deleteSchedule(id) {
+  schedules = schedules.filter(s => s.id !== id);
+  renderSchedules();
+  log('❌ تم حذف الموعد', 'warning');
+}
+
+function renderSchedules() {
+  const list = document.getElementById('scheduleList');
+  list.innerHTML = '';
+  
+  if (schedules.length === 0) {
+    list.innerHTML = '<div style="color: #94a3b8; text-align: center; padding: 20px;">لا توجد مواعيد. أضف موعداً جديداً.</div>';
+    return;
+  }
+  
+  schedules.sort((a, b) => a.time.localeCompare(b.time));
+  
+  schedules.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'schedule-item';
+    item.innerHTML = `
+      <div class="schedule-time">${s.time}</div>
+      <div class="schedule-info">⏱️ ${s.duration} دقيقة - ${s.enabled ? '✅ مفعّل' : '❌ معطّل'}</div>
+      <button class="schedule-delete" onclick="deleteSchedule(${s.id})">حذف</button>
+    `;
+    list.appendChild(item);
+  });
+}
+
+let lastScheduleCheck = '';
+function checkScheduleNow() {
+  const now = new Date();
+  const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0');
+  
+  if (currentTime === lastScheduleCheck) return;
+  lastScheduleCheck = currentTime;
+  
+  schedules.forEach(s => {
+    if (s.enabled && s.time === currentTime && !state.pumpOn) {
+      log(`⏰ تنفيذ الموعد المجدول: ${s.time}`, 'success');
+      if (state.mode === 'auto') toggleMode();
+      startPump(`جدولة: ${s.duration} دقيقة`);
+      
+      setTimeout(() => {
+        if (state.pumpOn) stopPump('انتهاء وقت الجدولة');
+      }, s.duration * 60 * 1000 / state.speed);
+    }
+  });
+}
+
+// Update schedule time display
+setInterval(() => {
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2, '0') + ':' + 
+               now.getMinutes().toString().padStart(2, '0') + ':' +
+               now.getSeconds().toString().padStart(2, '0');
+  const el = document.getElementById('scheduleTime');
+  if (el) el.textContent = time;
+}, 1000);
+
+// Initialize default schedules
+schedules = [
+  { id: 1, time: '06:00', duration: 5, enabled: true },
+  { id: 2, time: '18:30', duration: 5, enabled: true }
+];
+renderSchedules();
+
+// ============ CALCULATOR ============
+function calculateWater() {
+  const plantWater = parseFloat(document.getElementById('plantType').value) || 2;
+  const count = parseInt(document.getElementById('plantCount').value) || 1;
+  const flow = parseFloat(document.getElementById('pumpFlow').value) || 3;
+  const power = parseFloat(document.getElementById('pumpPower').value) || 20;
+  const waterPrice = parseFloat(document.getElementById('waterPrice').value) || 6;
+  const elecPrice = parseFloat(document.getElementById('elecPrice').value) || 0.5;
+  
+  const dailyL = plantWater * count;
+  const monthlyL = dailyL * 30;
+  const yearlyM3 = (dailyL * 365) / 1000;
+  const dailyMin = dailyL / flow;
+  const dailyKwh = (power * dailyMin / 60) / 1000;
+  
+  const monthlyWaterCost = (monthlyL / 1000) * waterPrice;
+  const monthlyElecCost = dailyKwh * 30 * elecPrice;
+  const totalMonth = monthlyWaterCost + monthlyElecCost;
+  const totalYear = totalMonth * 12;
+  
+  const traditional = monthlyL * 1.67; // 67% more water in traditional
+  const waterSaved = traditional - monthlyL;
+  const moneySaved = (waterSaved / 1000) * waterPrice * 12;
+  
+  document.getElementById('dailyWater').textContent = dailyL.toFixed(1) + ' لتر';
+  document.getElementById('monthlyWater').textContent = monthlyL.toFixed(0) + ' لتر';
+  document.getElementById('yearlyWater').textContent = yearlyM3.toFixed(1) + ' م³';
+  document.getElementById('dailyTime').textContent = dailyMin.toFixed(1) + ' دقيقة';
+  document.getElementById('dailyElec').textContent = dailyKwh.toFixed(4) + ' كيلوواط·س';
+  document.getElementById('monthlyWaterCost').textContent = monthlyWaterCost.toFixed(2) + ' ₪';
+  document.getElementById('monthlyElecCost').textContent = monthlyElecCost.toFixed(2) + ' ₪';
+  document.getElementById('totalMonthly').textContent = totalMonth.toFixed(2) + ' ₪';
+  document.getElementById('totalYearly').textContent = totalYear.toFixed(2) + ' ₪';
+  document.getElementById('waterSaved').textContent = waterSaved.toFixed(0) + ' لتر/شهر';
+  document.getElementById('moneySaved').textContent = moneySaved.toFixed(2) + ' ₪';
+}
+
+// ============ STATISTICS ============
+function updateStats() {
+  document.getElementById('statWater').textContent = state.waterUsed.toFixed(1) + ' L';
+  document.getElementById('statCycles').textContent = state.cycles;
+  document.getElementById('statRuntime').textContent = (state.totalRuntime / 60).toFixed(1) + ' min';
+  document.getElementById('statRain').textContent = state.rainDetections;
+  
+  if (state.moistureCount > 0) {
+    document.getElementById('statAvgMoist').textContent = 
+      Math.round(state.moistureSum / state.moistureCount) + '%';
+  }
+  
+  if (state.tempCount > 0) {
+    document.getElementById('statAvgTemp').textContent = 
+      Math.round(state.tempSum / state.tempCount) + '°C';
+  }
+  
+  document.getElementById('statEnergy').textContent = state.energyUsed.toFixed(2) + ' Wh';
+  document.getElementById('statCost').textContent = (state.waterUsed * 0.006).toFixed(2) + ' ₪';
+  document.getElementById('statHealth').textContent = Math.round(state.plantHealth) + '%';
+  document.getElementById('statSuccess').textContent = state.successfulCycles;
+  
+  const upMs = Date.now() - state.systemStartTime;
+  const upSec = Math.floor(upMs / 1000);
+  const upHr = Math.floor(upSec / 3600);
+  const upMin = Math.floor((upSec % 3600) / 60);
+  const upSecs = upSec % 60;
+  document.getElementById('statUptime').textContent = 
+    `${String(upHr).padStart(2, '0')}:${String(upMin).padStart(2, '0')}:${String(upSecs).padStart(2, '0')}`;
+  
+  // Efficiency calculation
+  let efficiency = 100;
+  if (state.cycles > 0) {
+    efficiency = (state.successfulCycles / state.cycles) * 100;
+  }
+  document.getElementById('statEfficiency').textContent = Math.round(efficiency) + '%';
+}
+
+// Update stats periodically
+setInterval(() => {
+  if (document.getElementById('tab-stats').classList.contains('active')) {
+    updateStats();
+  }
+}, 1000);
+
+// ============ EXPORT DATA ============
+function exportData() {
+  if (chartData.history.length === 0) {
+    log('❌ لا توجد بيانات للتصدير', 'error');
+    return;
+  }
+  
+  let csv = 'Timestamp,Moisture (%),Temperature (°C),Tank Level (%),Pump Status,Raining\n';
+  chartData.history.forEach(row => {
+    csv += `${row.timestamp},${row.moisture},${row.temperature},${row.tankLevel},${row.pumpOn ? 'ON' : 'OFF'},${row.raining ? 'YES' : 'NO'}\n`;
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `irrigation_data_${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  log(`✅ تم تصدير ${chartData.history.length} سجل`, 'success');
+}
+
+// ============ SLIDER LISTENERS ============
+document.getElementById('moistureSlider').addEventListener('input', (e) => {
+  state.moisture = parseInt(e.target.value);
+  updateUI();
+});
+
+document.getElementById('tempSlider').addEventListener('input', (e) => {
+  state.temperature = parseInt(e.target.value);
+  updateUI();
+});
+
+document.getElementById('thresholdSlider').addEventListener('input', (e) => {
+  state.threshold = parseInt(e.target.value);
+  updateUI();
+});
+
+document.getElementById('stopSlider').addEventListener('input', (e) => {
+  state.stopThreshold = parseInt(e.target.value);
+  if (state.stopThreshold <= state.threshold) {
+    state.stopThreshold = state.threshold + 5;
+    document.getElementById('stopSlider').value = state.stopThreshold;
+  }
+  updateUI();
+});
+
+document.getElementById('speedSlider').addEventListener('input', (e) => {
+  state.speed = parseInt(e.target.value);
+  updateUI();
+});
+
+// ============ INITIALIZE ============
+log('🚀 تم تشغيل نظام الري الذكي', 'success');
+log('📡 جاري قراءة الحساسات...', 'info');
+log('🌐 الاتصال بالـ MQTT Broker...', 'info');
+log('✅ النظام جاهز - النمط التلقائي', 'success');
+
+serialLog('=== Smart Irrigation Pro v2.0 ===', 'system');
+serialLog('System initialized', 'success');
+serialLog('Type HELP for commands', 'info');
+
+calculateWater();
+setInterval(controlLoop, 200);
+updateUI();
+</script>
+</body>
+</html>
